@@ -54,6 +54,10 @@ export default function Live2DCharacter({
         const { Application } = pixiModule;
         const { Live2DModel } = live2dModule;
 
+        if (!Ticker.shared) {
+          const manualTicker = new Ticker();
+          (Ticker as unknown as { shared: Ticker }).shared = manualTicker;
+        }
         const sharedTicker = Ticker.shared;
         if (!sharedTicker.started) {
           sharedTicker.start();
