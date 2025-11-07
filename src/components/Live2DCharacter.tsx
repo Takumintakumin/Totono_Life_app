@@ -99,13 +99,21 @@ export default function Live2DCharacter({
 
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
-        const scale = Math.min(width / nativeWidth, height / nativeHeight) * 0.9;
+        const horizontalMargin = Math.max(width * 0.05, 40);
+        const verticalMargin = Math.max(height * 0.08, 48);
+        const availableWidth = Math.max(width - horizontalMargin * 2, 1);
+        const availableHeight = Math.max(height - verticalMargin * 2, 1);
+        const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
+        const scale = Math.min(Math.max(rawScale, 0.25), 1.15);
+
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
         }
 
-        const bottomOffset = height - nativeHeight * scale * 0.5;
-        model.position?.set?.(width / 2, bottomOffset);
+        const halfModelHeight = (nativeHeight * scale) / 2;
+        const posX = width / 2;
+        const posY = height - verticalMargin - halfModelHeight;
+        model.position?.set?.(posX, Math.max(halfModelHeight + verticalMargin * 0.5, posY));
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
