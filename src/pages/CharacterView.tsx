@@ -50,7 +50,7 @@ export default function CharacterView({ character: _character, user: _user }: Ch
   const [activeTab, setActiveTab] = useState<'affinity' | 'chat'>('chat');
   const displayName = useMemo(() => _user.displayName || 'ゲスト', [_user.displayName]);
   const canvasHeight = useMemo(
-    () => Math.max(viewport.height * (viewport.width <= 520 ? 0.5 : 0.54), MIN_CANVAS_HEIGHT * 0.45),
+    () => Math.max(viewport.height * (viewport.width <= 520 ? 0.58 : 0.62), MIN_CANVAS_HEIGHT * 0.5),
     [viewport.height, viewport.width]
   );
 
