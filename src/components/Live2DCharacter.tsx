@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Application, DisplayObject, Ticker as PixiTicker } from 'pixi.js-legacy';
+import type { Application, DisplayObject } from 'pixi.js-legacy';
 import type { Live2DModel } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
@@ -56,11 +56,14 @@ export default function Live2DCharacter({
     const setup = async () => {
       await ensureCubismCoreLoaded();
 
-      const [{ Application: PixiApplication, Ticker }, live2dModule] = await Promise.all([
+      const [PIXI, tickerModule, live2dModule] = await Promise.all([
         import('pixi.js-legacy'),
+        import('@pixi/ticker'),
         import('pixi-live2d-display/cubism4'),
       ]);
 
+      const { Application: PixiApplication } = PIXI;
+      const { Ticker } = tickerModule;
       const { Live2DModel } = live2dModule;
 
       if (cancelled || !containerRef.current) {
@@ -89,8 +92,10 @@ export default function Live2DCharacter({
       containerRef.current.appendChild(canvas);
       appRef.current = app;
 
+      const sharedTicker = Ticker.shared;
+
       try {
-        (Live2DModel as unknown as { registerTicker?: (ticker: PixiTicker) => void }).registerTicker?.(Ticker.shared);
+        (Live2DModel as unknown as { registerTicker?: (ticker: typeof sharedTicker) => void }).registerTicker?.(sharedTicker);
       } catch (e) {
         console.warn('[Live2D] Failed to register ticker:', e);
       }
@@ -98,6 +103,8 @@ export default function Live2DCharacter({
       const model = (await Live2DModel.from(MODEL_PATH, {
         autoUpdate: true,
       })) as unknown as Live2DModelInstance;
+
+      model.autoUpdate = false;
 
       if (cancelled) {
         app.destroy(true, { children: true });
@@ -124,6 +131,10 @@ export default function Live2DCharacter({
       setIsReady(true);
 
       startIdleMotion();
+
+      app.ticker.add((delta) => {
+        model.update(delta);
+      });
 
       previousHandler = window.charAction as ((action: Live2DCharAction) => void) | undefined;
       window.charAction = (action: Live2DCharAction) => {
