@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { initDatabase } from '../src/lib/db-neon';
+import { initDatabase } from './_lib/db';
 import { handleCors } from './utils/cors';
 
 export default async function handler(

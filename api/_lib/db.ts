@@ -4,26 +4,24 @@ let pool: Pool | null = null;
 
 export function getDbPool(): Pool {
   if (!pool) {
-    // DATABASE_URLが設定されている場合はそれを使用（推奨）
     if (process.env.DATABASE_URL) {
-      const connectionString = sanitizeConnectionString(process.env.DATABASE_URL);
       pool = new Pool({
-        connectionString,
+        connectionString: sanitizeConnectionString(process.env.DATABASE_URL),
         ssl: {
-          rejectUnauthorized: false, // NeonのSSL証明書用
+          rejectUnauthorized: false,
         },
       });
     } else {
-      // 個別の環境変数から接続情報を構築
       pool = new Pool({
         host: process.env.POSTGRES_HOST || process.env.MYSQL_HOST,
-        port: parseInt(process.env.POSTGRES_PORT || process.env.MYSQL_PORT || '5432'),
+        port: parseInt(process.env.POSTGRES_PORT || process.env.MYSQL_PORT || '5432', 10),
         user: process.env.POSTGRES_USER || process.env.MYSQL_USER,
         password: process.env.POSTGRES_PASSWORD || process.env.MYSQL_PASSWORD,
         database: process.env.POSTGRES_DATABASE || process.env.MYSQL_DATABASE,
-        ssl: (process.env.POSTGRES_SSL === 'true' || process.env.MYSQL_SSL === 'true') 
-          ? { rejectUnauthorized: false }
-          : false,
+        ssl:
+          process.env.POSTGRES_SSL === 'true' || process.env.MYSQL_SSL === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
       });
     }
   }
@@ -32,11 +30,13 @@ export function getDbPool(): Pool {
 
 export async function initDatabase(): Promise<void> {
   const pool = getDbPool();
-  
-  // ユーザーテーブル
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id VARCHAR(255) PRIMARY KEY,
+      display_name VARCHAR(255),
+      email VARCHAR(255),
+      avatar_config JSONB DEFAULT '{}'::jsonb,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -44,18 +44,17 @@ export async function initDatabase(): Promise<void> {
 
   await pool.query(`
     ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)
+      ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)
   `);
   await pool.query(`
     ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS email VARCHAR(255)
+      ADD COLUMN IF NOT EXISTS email VARCHAR(255)
   `);
   await pool.query(`
     ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS avatar_config JSONB DEFAULT '{}'::jsonb
+      ADD COLUMN IF NOT EXISTS avatar_config JSONB DEFAULT '{}'::jsonb
   `);
 
-  // 更新日時を自動更新する関数
   await pool.query(`
     CREATE OR REPLACE FUNCTION update_updated_at_column()
     RETURNS TRIGGER AS $$
@@ -66,7 +65,6 @@ export async function initDatabase(): Promise<void> {
     $$ language 'plpgsql'
   `);
 
-  // ユーザーテーブルの更新日時トリガー
   await pool.query(`
     DROP TRIGGER IF EXISTS update_users_updated_at ON users
   `);
@@ -75,7 +73,6 @@ export async function initDatabase(): Promise<void> {
         FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
   `);
 
-  // テーマのENUM型を作成
   await pool.query(`
     DO $$ BEGIN
       CREATE TYPE theme_type AS ENUM ('plant', 'animal', 'robot');
@@ -92,7 +89,6 @@ export async function initDatabase(): Promise<void> {
     END $$;
   `);
 
-  // キャラクターテーブル
   await pool.query(`
     CREATE TABLE IF NOT EXISTS characters (
       user_id VARCHAR(255) PRIMARY KEY,
@@ -106,7 +102,6 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
-  // ルーティン設定テーブル
   await pool.query(`
     CREATE TABLE IF NOT EXISTS routine_settings (
       user_id VARCHAR(255) PRIMARY KEY,
@@ -118,7 +113,6 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
-  // 日次ログテーブル
   await pool.query(`
     CREATE TABLE IF NOT EXISTS day_logs (
       id SERIAL PRIMARY KEY,
@@ -136,7 +130,6 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
-  // 日次ログテーブルの更新日時トリガー
   await pool.query(`
     DROP TRIGGER IF EXISTS update_day_logs_updated_at ON day_logs
   `);
@@ -145,12 +138,17 @@ export async function initDatabase(): Promise<void> {
         FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
   `);
 
-  // インデックス追加
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_day_logs_user_date ON day_logs(user_id, date)
   `);
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_characters_last_active ON characters(last_active_date)
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_day_logs_user_id ON day_logs(user_id)
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_day_logs_date ON day_logs(date)
   `);
 }
 
@@ -162,7 +160,6 @@ function sanitizeConnectionString(raw: string): string {
     }
     return url.toString();
   } catch (error) {
-    // URLとして解釈できない場合は単純な文字列置換を行う
     return raw.replace(/[?&]channel_binding=require(&)?/, (match, trailingAmp) => {
       if (match.startsWith('?') && trailingAmp) {
         return '?';
