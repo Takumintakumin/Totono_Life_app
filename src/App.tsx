@@ -8,7 +8,6 @@ import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
 import Register from './pages/Register';
 import MyPage from './pages/MyPage';
-import Live2DContainer from './components/Live2DContainer';
 import './App.css';
 
 function App() {
@@ -130,10 +129,6 @@ function App() {
           </Routes>
         </main>
 
-        {/* 全画面共通のLive2Dキャラクター */}
-        <div className="live2d-floating">
-          <Live2DContainer width={280} height={340} idleMotionGroup="Idle" />
-        </div>
       </div>
     </Router>
   );

@@ -1,5 +1,5 @@
+import { useMemo } from 'react';
 import { Character, UserProfile } from '../types';
-import Live2DContainer from '../components/Live2DContainer';
 import ChatInterface from '../components/ChatInterface';
 import './CharacterView.css';
 
@@ -9,16 +9,32 @@ interface CharacterViewProps {
 }
 
 export default function CharacterView({ character, user }: CharacterViewProps) {
+  const progress = useMemo(() => {
+    if (!character.experienceToNext) return 0;
+    return Math.min(100, Math.max(0, (character.experience / character.experienceToNext) * 100));
+  }, [character.experience, character.experienceToNext]);
+
   return (
     <div className="character-view-container">
       <div className="card character-display-card">
-        <div className="live2d-wrapper">
-          <Live2DContainer width={380} height={440} />
+        <div className="character-illustration" aria-hidden>
+          <div className="character-figure">
+            <div className="character-hair" />
+            <div className="character-face">
+              <div className="character-eye left" />
+              <div className="character-eye right" />
+              <div className="character-mouth" />
+            </div>
+            <div className="character-body" />
+            <div className="character-shadow" />
+          </div>
         </div>
-        <div style={{ textAlign: 'center', color: '#4d6a4d', marginBottom: '1rem' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{user.displayName || 'ゲスト'}</div>
-          <div style={{ fontSize: '0.85rem', color: '#5d7b5d' }}>撫でてみてね！</div>
+
+        <div className="character-summary">
+          <div className="character-name">{user.displayName || 'ゲスト'}</div>
+          <p className="character-caption">キャラクターの詳細は準備中です。</p>
         </div>
+
         <div className="character-info" style={{ marginTop: '1.5rem' }}>
           <div className="character-level">
             Level {character.level}
@@ -35,10 +51,10 @@ export default function CharacterView({ character, user }: CharacterViewProps) {
             <div
               className="exp-bar"
               style={{
-                width: `${(character.experience / character.experienceToNext) * 100}%`,
+                width: `${progress}%`,
               }}
             >
-              {((character.experience / character.experienceToNext) * 100).toFixed(0)}%
+              {progress.toFixed(0)}%
             </div>
           </div>
         </div>
