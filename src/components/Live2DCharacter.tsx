@@ -66,16 +66,21 @@ export default function Live2DCharacter({
         return;
       }
 
-      const app = new PixiApplication({
+      const app = new PixiApplication();
+      await app.init({
         width,
         height,
-        view: undefined,
         backgroundAlpha: 0,
         antialias: true,
         autoDensity: true,
       });
 
-      const canvas = app.view as HTMLCanvasElement;
+      if (cancelled || !containerRef.current) {
+        app.destroy();
+        return;
+      }
+
+      const canvas = app.canvas as HTMLCanvasElement;
       canvas.style.width = '100%';
       canvas.style.height = '100%';
       canvas.style.display = 'block';
@@ -181,7 +186,7 @@ export default function Live2DCharacter({
       }
 
       if (appRef.current) {
-        appRef.current.destroy(true, { children: true });
+        appRef.current.destroy();
         appRef.current = null;
       }
 
