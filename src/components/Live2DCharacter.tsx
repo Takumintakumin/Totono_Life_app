@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Application } from 'pixi.js';
+import type { Application, Ticker as PixiTicker } from 'pixi.js';
 import type { DisplayObject } from '@pixi/display';
 import type { Live2DModel } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
@@ -57,7 +57,7 @@ export default function Live2DCharacter({
     const setup = async () => {
       await ensureCubismCoreLoaded();
 
-      const [{ Application: PixiApplication }, { Live2DModel }] = await Promise.all([
+      const [{ Application: PixiApplication, Ticker }, { Live2DModel }] = await Promise.all([
         import('pixi.js'),
         import('pixi-live2d-display/cubism4'),
       ]);
@@ -66,24 +66,24 @@ export default function Live2DCharacter({
         return;
       }
 
-      const app = new PixiApplication();
-      await app.init({
+      const app = new PixiApplication({
         width,
         height,
+        view: undefined,
         backgroundAlpha: 0,
         antialias: true,
         autoDensity: true,
       });
 
-      if (cancelled || !containerRef.current) {
-        app.destroy();
-        return;
-      }
-
-      const canvas = app.canvas as HTMLCanvasElement;
+      const canvas = app.view as HTMLCanvasElement;
       canvas.style.width = '100%';
       canvas.style.height = '100%';
       canvas.style.display = 'block';
+
+      if (cancelled || !containerRef.current) {
+        app.destroy(true, { children: true });
+        return;
+      }
 
       containerRef.current.appendChild(canvas);
       appRef.current = app;
@@ -91,6 +91,12 @@ export default function Live2DCharacter({
       const model = (await Live2DModel.from(MODEL_PATH, {
         autoUpdate: true,
       })) as unknown as Live2DModelInstance;
+
+      try {
+        (Live2DModel as unknown as { registerTicker?: (ticker: PixiTicker) => void }).registerTicker?.(Ticker.shared);
+      } catch (e) {
+        console.warn('[Live2D] Failed to register ticker:', e);
+      }
 
       if (cancelled) {
         app.destroy(true, { children: true });
@@ -186,7 +192,7 @@ export default function Live2DCharacter({
       }
 
       if (appRef.current) {
-        appRef.current.destroy();
+        appRef.current.destroy(true, { children: true });
         appRef.current = null;
       }
 
