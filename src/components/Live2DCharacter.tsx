@@ -452,56 +452,56 @@ function clampValue(value: number, min: number, max: number) {
 
 function getLayoutProfile(width: number, height: number) {
   if (width <= 420) {
-    const shift = height <= 640 ? 0.18 : 0.16;
+    const shift = height <= 640 ? 0.22 : 0.2;
     return {
-      horizontalRatio: 0.09,
-      verticalRatio: 0.18,
-      minHorizontalMargin: 32,
-      minVerticalMargin: 52,
-      scaleFactor: 0.32,
+      horizontalRatio: 0.12,
+      verticalRatio: 0.24,
+      minHorizontalMargin: 36,
+      minVerticalMargin: 60,
+      scaleFactor: 0.22,
+      minScale: 0.08,
+      maxScale: 0.14,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 640) {
+    const shift = height <= 720 ? 0.2 : 0.18;
+    return {
+      horizontalRatio: 0.15,
+      verticalRatio: 0.26,
+      minHorizontalMargin: 42,
+      minVerticalMargin: 68,
+      scaleFactor: 0.25,
+      minScale: 0.1,
+      maxScale: 0.16,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 960) {
+    const shift = height <= 820 ? 0.18 : 0.16;
+    return {
+      horizontalRatio: 0.18,
+      verticalRatio: 0.3,
+      minHorizontalMargin: 52,
+      minVerticalMargin: 80,
+      scaleFactor: 0.28,
       minScale: 0.12,
       maxScale: 0.18,
       verticalShift: shift,
     } as const;
   }
 
-  if (width <= 640) {
-    const shift = height <= 720 ? 0.16 : 0.14;
-    return {
-      horizontalRatio: 0.11,
-      verticalRatio: 0.2,
-      minHorizontalMargin: 36,
-      minVerticalMargin: 56,
-      scaleFactor: 0.35,
-      minScale: 0.14,
-      maxScale: 0.2,
-      verticalShift: shift,
-    } as const;
-  }
-
-  if (width <= 960) {
-    const shift = height <= 820 ? 0.14 : 0.12;
-    return {
-      horizontalRatio: 0.13,
-      verticalRatio: 0.22,
-      minHorizontalMargin: 44,
-      minVerticalMargin: 64,
-      scaleFactor: 0.38,
-      minScale: 0.16,
-      maxScale: 0.22,
-      verticalShift: shift,
-    } as const;
-  }
-
-  const shift = height <= 900 ? 0.12 : 0.1;
+  const shift = height <= 900 ? 0.18 : 0.15;
   return {
-    horizontalRatio: 0.16,
-    verticalRatio: 0.24,
-    minHorizontalMargin: 56,
-    minVerticalMargin: 72,
-    scaleFactor: 0.4,
-    minScale: 0.18,
-    maxScale: 0.24,
+    horizontalRatio: 0.22,
+    verticalRatio: 0.32,
+    minHorizontalMargin: 68,
+    minVerticalMargin: 92,
+    scaleFactor: 0.3,
+    minScale: 0.14,
+    maxScale: 0.2,
     verticalShift: shift,
   } as const;
 }
