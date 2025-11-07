@@ -9,9 +9,9 @@ interface AvatarBuilderProps {
 
 const ACCESSORY_OPTIONS: { label: string; value: AvatarAccessory }[] = [
   { label: 'なし', value: 'none' },
-  { label: 'お花', value: 'flower' },
-  { label: 'リボン', value: 'ribbon' },
-  { label: '新芽', value: 'sprout' },
+  { label: 'ハット', value: 'hat' },
+  { label: 'メガネ', value: 'glasses' },
+  { label: 'マフラー', value: 'scarf' },
 ];
 
 const PRESETS: { name: string; config: AvatarConfig }[] = [
@@ -20,39 +20,39 @@ const PRESETS: { name: string; config: AvatarConfig }[] = [
     config: createDefaultAvatarConfig(),
   },
   {
-    name: 'さくら',
+    name: 'カフェ',
     config: {
-      bodyColor: '#fff0f6',
-      leafPrimary: '#ffb7c5',
-      leafSecondary: '#e08a9b',
-      outlineColor: '#b05a6f',
-      accentColor: '#ffc6d3',
-      cheekColor: '#ff9baa',
-      accessory: 'flower',
+      skinTone: '#f1c9a5',
+      hairColor: '#4b3621',
+      clothingColor: '#c2825c',
+      outlineColor: '#2b2119',
+      accentColor: '#f2b880',
+      cheekColor: '#ff8fa3',
+      accessory: 'hat',
     },
   },
   {
-    name: 'ウッド',
+    name: 'パステル',
     config: {
-      bodyColor: '#fff6db',
-      leafPrimary: '#96c76f',
-      leafSecondary: '#5a8b3c',
-      outlineColor: '#4b3b2f',
-      accentColor: '#f4b860',
-      cheekColor: '#ffb199',
-      accessory: 'sprout',
+      skinTone: '#ffdacc',
+      hairColor: '#ff8fab',
+      clothingColor: '#a5b4ff',
+      outlineColor: '#5a5d94',
+      accentColor: '#ffc6ff',
+      cheekColor: '#ff9bbf',
+      accessory: 'glasses',
     },
   },
   {
-    name: 'ネオン',
+    name: 'フォレスト',
     config: {
-      bodyColor: '#f6f7ff',
-      leafPrimary: '#8b93f5',
-      leafSecondary: '#5d63d1',
-      outlineColor: '#31357c',
-      accentColor: '#f592f3',
-      cheekColor: '#f5a8fb',
-      accessory: 'ribbon',
+      skinTone: '#f0e2c6',
+      hairColor: '#2f5233',
+      clothingColor: '#6fbf73',
+      outlineColor: '#203926',
+      accentColor: '#b9d989',
+      cheekColor: '#ffd4a8',
+      accessory: 'scarf',
     },
   },
 ];
@@ -60,33 +60,49 @@ const PRESETS: { name: string; config: AvatarConfig }[] = [
 export default function AvatarBuilder({ value, onChange }: AvatarBuilderProps) {
   const accessoryNode = useMemo(() => {
     switch (value.accessory) {
-      case 'flower':
+      case 'hat':
         return (
-          <g transform="translate(135,70)">
-            <circle r="10" fill={value.accentColor} stroke={value.outlineColor} strokeWidth="2" />
-            <circle r="4" fill={value.outlineColor} />
-          </g>
-        );
-      case 'ribbon':
-        return (
-          <g transform="translate(100,80)">
+          <g transform="translate(100,45)">
             <path
-              d="M-16 0 C-28 -10,-28 12,-12 8 C-8 2,-4 -2,0 -4 C4 -2,8 2,12 8 C28 12,28 -10,16 0"
+              d="M-40 20 C-28 0,28 0,40 20 Z"
+              fill={value.hairColor}
+              stroke={value.outlineColor}
+              strokeWidth={3}
+            />
+            <rect
+              x="-28"
+              y="20"
+              width="56"
+              height="18"
+              rx="6"
               fill={value.accentColor}
               stroke={value.outlineColor}
-              strokeWidth="2"
+              strokeWidth={2}
             />
-            <circle cx="0" cy="-2" r="4" fill={value.outlineColor} />
           </g>
         );
-      case 'sprout':
+      case 'glasses':
         return (
-          <g transform="translate(100,58)">
+          <g transform="translate(100,96)" fill="none" stroke={value.outlineColor} strokeWidth={2.5}>
+            <circle cx="-14" r="10" />
+            <circle cx="14" r="10" />
+            <line x1="-4" y1="0" x2="4" y2="0" />
+          </g>
+        );
+      case 'scarf':
+        return (
+          <g transform="translate(100,120)">
             <path
-              d="M0 0 C-18 -18,-26 -6,-14 4 C-10 8,-4 10,0 12 C4 10,10 8,14 4 C26 -6,18 -18,0 0"
-              fill={value.leafPrimary}
-              stroke={value.leafSecondary}
-              strokeWidth="2"
+              d="M-34 -6 C-10 10,10 10,34 -6 C30 4,28 12,20 14 C12 16,0 10,-6 14 C-12 18,-22 12,-34 -6 Z"
+              fill={value.accentColor}
+              stroke={value.outlineColor}
+              strokeWidth={2}
+            />
+            <path
+              d="M14 6 C20 22,10 34,0 40"
+              stroke={value.outlineColor}
+              strokeWidth={2}
+              fill="none"
             />
           </g>
         );
@@ -109,45 +125,53 @@ export default function AvatarBuilder({ value, onChange }: AvatarBuilderProps) {
       <div className="avatar-builder-preview" aria-label="アバターのプレビュー">
         <svg viewBox="0 0 200 200" role="img" aria-hidden="true">
           <g className="preview-char">
-            <ellipse
-              cx="100"
-              cy="118"
-              rx="50"
-              ry="46"
-              style={{ fill: value.bodyColor, stroke: value.outlineColor, strokeWidth: 3 }}
+            <rect
+              x="70"
+              y="112"
+              width="60"
+              height="60"
+              rx="24"
+              style={{ fill: value.clothingColor, stroke: value.outlineColor, strokeWidth: 3 }}
             />
-            <g transform="translate(-6,-18)">
-              <path
-                d="M88 80 C62 72,54 44,86 44 C92 44,98 48,102 54 C110 66,108 78,88 80 Z"
-                style={{ fill: value.leafPrimary, stroke: value.leafSecondary, strokeWidth: 2 }}
-              />
-            </g>
-            <g transform="translate(8,-14)">
-              <path
-                d="M112 78 C140 72,148 44,116 44 C110 44,104 48,100 54 C92 66,94 78,112 78 Z"
-                style={{ fill: value.leafPrimary, stroke: value.leafSecondary, strokeWidth: 2 }}
-              />
-            </g>
+            <rect
+              x="70"
+              y="140"
+              width="60"
+              height="18"
+              rx="9"
+              style={{ fill: value.accentColor, opacity: 0.9 }}
+            />
 
-            <circle cx="82" cy="118" r="6" fill={value.cheekColor} opacity={0.85} />
-            <circle cx="118" cy="118" r="6" fill={value.cheekColor} opacity={0.85} />
+            <circle
+              cx="100"
+              cy="78"
+              r="34"
+              style={{ fill: value.skinTone, stroke: value.outlineColor, strokeWidth: 3 }}
+            />
+            <path
+              d="M60 82 C60 50,80 36,100 36 C120 36,140 50,140 82 C128 74,116 70,100 70 C84 70,72 74,60 82 Z"
+              fill={value.hairColor}
+            />
+
+            <circle cx="82" cy="102" r="6" fill={value.cheekColor} opacity={0.85} />
+            <circle cx="118" cy="102" r="6" fill={value.cheekColor} opacity={0.85} />
 
             <g>
-              <ellipse cx="88" cy="106" rx="8" ry="10" fill="#0b3411" />
-              <circle cx="86" cy="103" r="2.6" fill="#ffffff" />
+              <ellipse cx="88" cy="96" rx="7" ry="9" fill="#0b3411" />
+              <circle cx="86" cy="93" r="2.4" fill="#ffffff" />
             </g>
             <g>
-              <ellipse cx="112" cy="106" rx="8" ry="10" fill="#0b3411" />
-              <circle cx="114" cy="103" r="2.6" fill="#ffffff" />
+              <ellipse cx="112" cy="96" rx="7" ry="9" fill="#0b3411" />
+              <circle cx="114" cy="93" r="2.4" fill="#ffffff" />
             </g>
 
             <path d="M92 124 Q100 130 108 124" stroke={value.outlineColor} strokeWidth={2.5} fill="none" />
 
             {accessoryNode}
 
-            <circle cx="60" cy="70" r="4" fill={value.accentColor} opacity={0.8} />
+            <circle cx="58" cy="58" r="4" fill={value.accentColor} opacity={0.8} />
             <polygon
-              points="150,60 152,66 158,66 153,69 155,76 150,71 145,76 147,69 142,66 148,66"
+              points="148,52 151,58 158,58 152,61 154,68 148,63 143,68 145,61 139,58 146,58"
               fill={value.accentColor}
               opacity={0.6}
             />
@@ -158,26 +182,26 @@ export default function AvatarBuilder({ value, onChange }: AvatarBuilderProps) {
 
       <div className="avatar-builder-controls">
         <section>
-          <h3>カラーパレット</h3>
+          <h3>カラー</h3>
           <div className="color-grid">
             <label>
-              ボディ
-              <input type="color" value={value.bodyColor} onChange={handleColor('bodyColor')} />
+              肌の色
+              <input type="color" value={value.skinTone} onChange={handleColor('skinTone')} />
             </label>
             <label>
-              リーフ
-              <input type="color" value={value.leafPrimary} onChange={handleColor('leafPrimary')} />
+              髪の色
+              <input type="color" value={value.hairColor} onChange={handleColor('hairColor')} />
             </label>
             <label>
-              リーフ（縁）
-              <input type="color" value={value.leafSecondary} onChange={handleColor('leafSecondary')} />
+              服の色
+              <input type="color" value={value.clothingColor} onChange={handleColor('clothingColor')} />
             </label>
             <label>
               アクセント
               <input type="color" value={value.accentColor} onChange={handleColor('accentColor')} />
             </label>
             <label>
-              おてもち
+              ほっぺ
               <input type="color" value={value.cheekColor} onChange={handleColor('cheekColor')} />
             </label>
             <label>

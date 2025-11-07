@@ -28,7 +28,7 @@ export default function SeedAvatar({ character, avatar, variant = 'floating', sh
   const [isBlinking, setIsBlinking] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [sparkleVisible, setSparkleVisible] = useState(false);
-  const [leafDance, setLeafDance] = useState(false);
+  const [hairBounce, setHairBounce] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
   const isFloating = variant === 'floating';
 
@@ -37,33 +37,42 @@ export default function SeedAvatar({ character, avatar, variant = 'floating', sh
     const outline = avatar.outlineColor;
 
     switch (avatar.accessory) {
-      case 'flower':
+      case 'hat':
         return (
-          <g className="seed-accessory" transform="translate(135,70)">
-            <circle r="10" fill={accent} stroke={outline} strokeWidth="2" />
-            <circle r="4" fill={outline} />
+          <g className="seed-accessory" transform="translate(100,45)">
+            <path
+              d="M-40 20 C-28 0,28 0,40 20 Z"
+              fill={avatar.hairColor}
+              stroke={outline}
+              strokeWidth="3"
+            />
+            <rect x="-28" y="20" width="56" height="18" rx="6" fill={accent} stroke={outline} strokeWidth="2" />
           </g>
         );
-      case 'ribbon':
+      case 'glasses':
         return (
-          <g className="seed-accessory" transform="translate(100,80)">
+          <g className="seed-accessory" transform="translate(100,96)" fill="none" stroke={outline} strokeWidth="2.5">
+            <circle cx="-14" r="10" />
+            <circle cx="14" r="10" />
+            <line x1="-24" y1="0" x2="-36" y2="-2" />
+            <line x1="24" y1="0" x2="36" y2="-2" />
+            <line x1="-4" y1="0" x2="4" y2="0" />
+          </g>
+        );
+      case 'scarf':
+        return (
+          <g className="seed-accessory" transform="translate(100,120)">
             <path
-              d="M-16 0 C-28 -10,-28 12,-12 8 C-8 2,-4 -2,0 -4 C4 -2,8 2,12 8 C28 12,28 -10,16 0"
+              d="M-34 -6 C-10 10,10 10,34 -6 C30 4,28 12,20 14 C12 16,0 10,-6 14 C-12 18,-22 12,-34 -6 Z"
               fill={accent}
               stroke={outline}
               strokeWidth="2"
             />
-            <circle cx="0" cy="-2" r="4" fill={outline} />
-          </g>
-        );
-      case 'sprout':
-        return (
-          <g className="seed-accessory" transform="translate(100,58)">
             <path
-              d="M0 0 C-18 -18,-26 -6,-14 4 C-10 8,-4 10,0 12 C4 10,10 8,14 4 C26 -6,18 -18,0 0"
-              fill={avatar.leafPrimary}
-              stroke={avatar.leafSecondary}
+              d="M14 6 C20 22,10 34,0 40"
+              stroke={outline}
               strokeWidth="2"
+              fill="none"
             />
           </g>
         );
@@ -114,7 +123,7 @@ export default function SeedAvatar({ character, avatar, variant = 'floating', sh
     setMood('neutral');
     setMessage('');
     setSparkleVisible(false);
-    setLeafDance(false);
+    setHairBounce(false);
     setIsJumping(false);
   }, []);
 
@@ -131,10 +140,10 @@ export default function SeedAvatar({ character, avatar, variant = 'floating', sh
       setMood('happy');
       setIsJumping(true);
       setSparkleVisible(true);
-      setLeafDance(true);
+      setHairBounce(true);
 
       schedule(() => setIsJumping(false), 720);
-      schedule(() => setLeafDance(false), 720);
+      schedule(() => setHairBounce(false), 720);
       schedule(() => setSparkleVisible(false), 1400);
       schedule(() => triggerNeutral(), 1600);
     },
@@ -208,49 +217,60 @@ export default function SeedAvatar({ character, avatar, variant = 'floating', sh
           <div className="seed-char-wrap">
             <svg viewBox="0 0 200 200" xmlSpace="preserve">
               <g
-                className={`seed-char breath ${leafDance ? 'leaf-dance' : ''} ${sparkleVisible ? 'glow' : ''}`}
+                className={`seed-char breath ${hairBounce ? 'hair-bounce' : ''} ${sparkleVisible ? 'glow' : ''}`}
               >
-                <ellipse
-                  cx="100"
-                  cy="118"
-                  rx="48"
-                  ry="44"
-                  className="seed-bulb"
-                  style={{ fill: avatar.bodyColor, stroke: avatar.outlineColor }}
+                <rect
+                  x="70"
+                  y="110"
+                  width="60"
+                  height="62"
+                  rx="24"
+                  className="seed-body"
+                  style={{ fill: avatar.clothingColor, stroke: avatar.outlineColor }}
                 />
-                <g className="seed-leaf seed-leaf-left">
-                  <path
-                    d="M88 80 C62 72,54 44,86 44 C92 44,98 48,102 54 C110 66,108 78,88 80 Z"
-                    style={{ fill: avatar.leafPrimary, stroke: avatar.leafSecondary }}
-                  />
-                </g>
-                <g className="seed-leaf seed-leaf-right">
-                  <path
-                    d="M112 78 C140 72,148 44,116 44 C110 44,104 48,100 54 C92 66,94 78,112 78 Z"
-                    style={{ fill: avatar.leafPrimary, stroke: avatar.leafSecondary }}
-                  />
-                </g>
+                <rect
+                  x="70"
+                  y="140"
+                  width="60"
+                  height="18"
+                  rx="9"
+                  className="seed-accent"
+                  style={{ fill: avatar.accentColor }}
+                />
 
-                <circle cx="82" cy="118" r="5" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
-                <circle cx="118" cy="118" r="5" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
+                <circle
+                  cx="100"
+                  cy="78"
+                  r="34"
+                  className="seed-head"
+                  style={{ fill: avatar.skinTone, stroke: avatar.outlineColor }}
+                />
+                <path
+                  className="seed-hair"
+                  style={{ fill: avatar.hairColor }}
+                  d="M60 82 C60 50,80 38,100 38 C120 38,140 50,140 82 C126 74,114 70,100 70 C86 70,72 74,60 82 Z"
+                />
+
+                <circle cx="82" cy="102" r="6" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
+                <circle cx="118" cy="102" r="6" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
 
                 <g className={`seed-eyes ${isBlinking ? 'blink' : ''}`}>
                   <g>
-                    <ellipse cx="88" cy="106" rx="7" ry="9" className="seed-eye" />
-                    <circle cx="86" cy="103" r="2.4" className="seed-eye-highlight" />
+                    <ellipse cx="88" cy="96" rx="7" ry="9" className="seed-eye" />
+                    <circle cx="86" cy="93" r="2.4" className="seed-eye-highlight" />
                   </g>
                   <g>
-                    <ellipse cx="112" cy="106" rx="7" ry="9" className="seed-eye" />
-                    <circle cx="114" cy="103" r="2.4" className="seed-eye-highlight" />
+                    <ellipse cx="112" cy="96" rx="7" ry="9" className="seed-eye" />
+                    <circle cx="114" cy="93" r="2.4" className="seed-eye-highlight" />
                   </g>
                 </g>
 
                 <path d={mouthPath} className="seed-mouth" stroke={avatar.outlineColor} />
 
                 <g className={`seed-sparkles ${sparkleVisible ? 'visible' : ''}`}>
-                  <circle cx="60" cy="70" r="3" fill={avatar.accentColor} />
+                  <circle cx="58" cy="58" r="4" fill={avatar.accentColor} />
                   <polygon
-                    points="150,60 152,66 158,66 153,69 155,76 150,71 145,76 147,69 142,66 148,66"
+                    points="148,52 151,58 158,58 152,61 154,68 148,63 143,68 145,61 139,58 146,58"
                     fill={avatar.accentColor}
                   />
                 </g>

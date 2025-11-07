@@ -3,12 +3,12 @@ import { getDbPool } from '../src/lib/db-neon';
 import { handleCors, setCorsHeaders } from './utils/cors';
 
 const DEFAULT_AVATAR = {
-  bodyColor: '#fffbe6',
-  leafPrimary: '#9be07a',
-  leafSecondary: '#6fb44f',
+  skinTone: '#fcd7b8',
+  hairColor: '#5d4632',
+  clothingColor: '#7fb4ff',
   outlineColor: '#2b3a2b',
-  accentColor: '#ffd56b',
-  cheekColor: '#ffd0d0',
+  accentColor: '#ffb26b',
+  cheekColor: '#ff9bb3',
   accessory: 'none',
 };
 

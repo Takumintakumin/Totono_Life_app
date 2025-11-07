@@ -2,12 +2,12 @@ export type Mood = 'happy' | 'neutral' | 'sad';
 
 export type RoutineType = 'morning' | 'evening';
 
-export type AvatarAccessory = 'none' | 'flower' | 'ribbon' | 'sprout';
+export type AvatarAccessory = 'none' | 'hat' | 'glasses' | 'scarf';
 
 export interface AvatarConfig {
-  bodyColor: string;
-  leafPrimary: string;
-  leafSecondary: string;
+  skinTone: string;
+  hairColor: string;
+  clothingColor: string;
   outlineColor: string;
   accentColor: string;
   cheekColor: string;
@@ -63,12 +63,12 @@ export interface AppData {
 }
 
 export const createDefaultAvatarConfig = (): AvatarConfig => ({
-  bodyColor: '#fffbe6',
-  leafPrimary: '#9be07a',
-  leafSecondary: '#6fb44f',
+  skinTone: '#fcd7b8',
+  hairColor: '#5d4632',
+  clothingColor: '#7fb4ff',
   outlineColor: '#2b3a2b',
-  accentColor: '#ffd56b',
-  cheekColor: '#ffd0d0',
+  accentColor: '#ffb26b',
+  cheekColor: '#ff9bb3',
   accessory: 'none',
 });
 
