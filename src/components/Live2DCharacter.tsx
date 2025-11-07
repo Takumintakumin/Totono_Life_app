@@ -11,10 +11,10 @@ const TAP_MOTIONS = [0, 3, 4];
 const PET_MOTIONS = [1, 5];
 const AMBIENT_MOTIONS = [0, 2, 3, 4, 5];
 const IDLE_VARIANTS = ['Idle', 'Idle_A', 'Idle_B'];
-const MIN_AMBIENT_DELAY = 7000;
-const MAX_AMBIENT_DELAY = 13000;
+const MIN_AMBIENT_DELAY = 4200;
+const MAX_AMBIENT_DELAY = 9000;
 const PET_DISTANCE_THRESHOLD = 65;
-const INTERACTION_COOLDOWN = 4500;
+const INTERACTION_COOLDOWN = 2600;
 
 type Live2DModelInstance = Live2DModelType & DisplayObject & {
   autoUpdate?: boolean;
@@ -165,13 +165,12 @@ export default function Live2DCharacter({
         const tickerCallback = (delta: number) => {
           const currentModel = modelRef.current;
           if (!currentModel) return;
-          elapsed += delta;
+          const normalizedDelta = delta * 1.35;
+          elapsed += normalizedDelta;
 
-          // Update model with normalized delta to keep motion smooth across frame rates
-          currentModel.update?.(delta);
+          currentModel.update?.(normalizedDelta);
 
-          // Exchange idle motion occasionally for variety
-          if (elapsed > 60 * 20) {
+          if (elapsed > 60 * 14) {
             elapsed = 0;
             rotateIdleVariant();
           }
