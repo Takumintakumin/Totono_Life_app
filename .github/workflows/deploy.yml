@@ -17,6 +17,10 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - name: Set base path
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          echo "VITE_BASE_PATH=/$REPO_NAME/" >> $GITHUB_ENV
       - run: npm install
       - run: npm run build
       - uses: actions/configure-pages@v2
