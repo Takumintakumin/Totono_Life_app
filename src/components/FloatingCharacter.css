@@ -1,0 +1,219 @@
+.floating-character {
+  position: fixed;
+  z-index: 999;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate(-50%, -50%);
+  transition: left 0.1s linear, top 0.1s linear;
+}
+
+.character-avatar {
+  position: relative;
+  display: inline-block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.character-face {
+  font-size: 3.5rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+/* 移動アニメーション */
+.character-moving {
+  animation: float 2s ease-in-out infinite;
+}
+
+.character-moving.character-right .character-face {
+  transform: scaleX(1);
+}
+
+.character-moving.character-left .character-face {
+  transform: scaleX(-1);
+}
+
+.character-moving.character-up .character-face {
+  transform: rotate(-15deg);
+}
+
+.character-moving.character-down .character-face {
+  transform: rotate(15deg);
+}
+
+/* アイドル状態（浮遊） */
+.character-idle {
+  animation: idleFloat 3s ease-in-out infinite;
+}
+
+@keyframes idleFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px);
+  }
+}
+
+/* 撫でられている状態 */
+.character-petting {
+  animation: petting 0.5s ease-in-out infinite;
+}
+
+@keyframes petting {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(-5deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15) rotate(0deg);
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(5deg);
+  }
+}
+
+/* 浮遊アニメーション */
+@keyframes float {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-8px);
+  }
+}
+
+/* ハートエフェクト */
+.pet-hearts {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pet-hearts .heart {
+  position: absolute;
+  font-size: 1.5rem;
+  animation: heartFloat 1s ease-out forwards;
+}
+
+.pet-hearts .heart:nth-child(1) {
+  left: -20px;
+  animation-delay: 0s;
+}
+
+.pet-hearts .heart:nth-child(2) {
+  left: 0;
+  animation-delay: 0.2s;
+}
+
+.pet-hearts .heart:nth-child(3) {
+  left: 20px;
+  animation-delay: 0.4s;
+}
+
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(1.2);
+  }
+}
+
+/* メッセージバブル */
+.character-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #667eea;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: bubblePop 0.3s ease-out;
+  pointer-events: none;
+}
+
+.character-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.95);
+}
+
+@keyframes bubblePop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* 撫でた回数バッジ */
+.pet-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* モバイル対応 */
+@media (max-width: 480px) {
+  .character-face {
+    font-size: 2.5rem;
+  }
+
+  .character-bubble {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .pet-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+  }
+}
+
+/* タッチデバイスでの最適化 */
+@media (hover: none) and (pointer: coarse) {
+  .floating-character {
+    touch-action: manipulation;
+  }
+}
+
