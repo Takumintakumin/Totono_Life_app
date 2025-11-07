@@ -10,10 +10,27 @@ const EXTRA_MOTION_GROUP = '';
 const EXTRA_MOTION_COUNT = 6;
 const MIN_AMBIENT_DELAY = 7000;
 const MAX_AMBIENT_DELAY = 13000;
+const TAP_MOTION_INDEX = 0;
+const PET_MOTION_INDEX = 1;
+const PET_DISTANCE_THRESHOLD = 65;
+const INTERACTION_COOLDOWN = 4500;
 
 type Live2DModelInstance = Live2DModelType & DisplayObject & {
   autoUpdate?: boolean;
   update?: (delta: number) => void;
+};
+
+type PointerInteractionEvent = {
+  global?: {
+    x: number;
+    y: number;
+  };
+  data?: {
+    global?: {
+      x: number;
+      y: number;
+    };
+  };
 };
 
 export interface Live2DCharacterProps {
@@ -42,6 +59,7 @@ export default function Live2DCharacter({
   useEffect(() => {
     let cancelled = false;
     let previousHandler = window.charAction;
+    const detachInteractionHandlers: Array<() => void> = [];
 
     const setup = async () => {
       try {
@@ -105,18 +123,15 @@ export default function Live2DCharacter({
 
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
-        const horizontalMargin = Math.max(width * 0.24, 104);
-        const verticalMargin = Math.max(height * 0.26, 112);
+
+        const layoutProfile = getLayoutProfile(width, height);
+        const horizontalMargin = Math.max(width * layoutProfile.horizontalRatio, layoutProfile.minHorizontalMargin);
+        const verticalMargin = Math.max(height * layoutProfile.verticalRatio, layoutProfile.minVerticalMargin);
+
         const availableWidth = Math.max(width - horizontalMargin * 2, 1);
         const availableHeight = Math.max(height - verticalMargin * 2, 1);
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const MIN_SCALE = 0.15;
-        const MAX_SCALE = 0.58;
-
-        const scaledRaw = Math.min(rawScale, MAX_SCALE);
-        const growthRange = Math.max(scaledRaw - MIN_SCALE, 0);
-        const responsiveFactor = Math.min(Math.max((Math.min(width, height) - 720) / 1120, 0), 1);
-        const scale = Math.min(MAX_SCALE, MIN_SCALE + growthRange * responsiveFactor);
+        const scale = Math.min(layoutProfile.maxScale, rawScale);
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
@@ -124,19 +139,22 @@ export default function Live2DCharacter({
 
         const halfModelHeight = (nativeHeight * scale) / 2;
         const posX = width / 2;
-        const posY = height - verticalMargin - halfModelHeight;
-        model.position?.set?.(posX, Math.max(halfModelHeight + verticalMargin * 0.5, posY));
+        let posY = height - verticalMargin - halfModelHeight;
+        posY -= halfModelHeight * layoutProfile.verticalShift;
+        const minimumY = halfModelHeight + verticalMargin * 0.35;
+        model.position?.set?.(posX, Math.max(minimumY, posY));
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
           buttonMode?: boolean;
           cursor?: string;
-          on?: (event: string, fn: () => void) => void;
+          on?: (event: string, fn: (event: PointerInteractionEvent) => void) => void;
+          off?: (event: string, fn: (event: PointerInteractionEvent) => void) => void;
         };
         interactiveModel.interactive = true;
         interactiveModel.buttonMode = true;
         interactiveModel.cursor = 'pointer';
-        interactiveModel.on?.('pointertap', () => triggerMotion('Idle'));
+        setupInteractionHandlers(interactiveModel);
 
         app.stage.addChild(model as unknown as never);
         modelRef.current = model;
@@ -153,19 +171,26 @@ export default function Live2DCharacter({
 
         window.charAction = (action) => {
           previousHandler?.(action);
+          let handled = false;
           switch (action) {
             case 'morning':
             case 'night':
-              triggerMotion('Idle');
+              handled = triggerMotion(idleMotionGroup, 0, { force: true });
               break;
             case 'miss':
               triggerExpression('exp_05');
+              handled = true;
               break;
             case 'blink':
               triggerExpression('exp_01');
+              handled = true;
               break;
             default:
               break;
+          }
+
+          if (handled) {
+            scheduleAmbientMotion(INTERACTION_COOLDOWN);
           }
         };
 
@@ -180,13 +205,31 @@ export default function Live2DCharacter({
           }
         }
 
-        function triggerMotion(group: string, index = 0) {
+        function triggerMotion(group: string, index = 0, options: { force?: boolean } = {}): boolean {
           const currentModel = modelRef.current;
-          if (!currentModel) return;
+          if (!currentModel) return false;
+
+          const isIdleGroup = group === idleMotionGroup;
+          const shouldForce = Boolean(options.force);
+
+          if (!isIdleGroup && !shouldForce && isMotionPlaying(currentModel)) {
+            return false;
+          }
+
           try {
+            if (!isIdleGroup) {
+              (currentModel.internalModel as unknown as {
+                motionManager?: {
+                  stopAllMotions?: () => void;
+                };
+              })?.motionManager?.stopAllMotions?.();
+            }
+
             currentModel.motion?.(group, index);
+            return true;
           } catch (error) {
             console.warn('[Live2D] Motion trigger failed:', error);
+            return false;
           }
         }
 
@@ -200,12 +243,91 @@ export default function Live2DCharacter({
           }
         }
 
-        function scheduleAmbientMotion() {
+        function setupInteractionHandlers(target: {
+          on?: (event: string, fn: (event: PointerInteractionEvent) => void) => void;
+          off?: (event: string, fn: (event: PointerInteractionEvent) => void) => void;
+        }) {
+          const pointerState = {
+            isDown: false,
+            hasDragged: false,
+            lastX: 0,
+            lastY: 0,
+          } as {
+            isDown: boolean;
+            hasDragged: boolean;
+            lastX: number;
+            lastY: number;
+          };
+
+          const handlePointerTap = () => {
+            pointerState.hasDragged = false;
+            const triggered = triggerMotion(EXTRA_MOTION_GROUP, TAP_MOTION_INDEX, { force: true });
+            if (!triggered) {
+              triggerExpression(getRandomExpression());
+            }
+            scheduleAmbientMotion(INTERACTION_COOLDOWN + Math.random() * 1200);
+          };
+
+          const handlePointerDown = (event: PointerInteractionEvent) => {
+            pointerState.isDown = true;
+            pointerState.hasDragged = false;
+            const position = getPointerPosition(event);
+            pointerState.lastX = position.x;
+            pointerState.lastY = position.y;
+          };
+
+          const handlePointerMove = (event: PointerInteractionEvent) => {
+            if (!pointerState.isDown) {
+              return;
+            }
+
+            const position = getPointerPosition(event);
+            const dx = position.x - pointerState.lastX;
+            const dy = position.y - pointerState.lastY;
+            pointerState.lastX = position.x;
+            pointerState.lastY = position.y;
+
+            if (!pointerState.hasDragged && Math.hypot(dx, dy) >= PET_DISTANCE_THRESHOLD) {
+              pointerState.hasDragged = triggerMotion(EXTRA_MOTION_GROUP, PET_MOTION_INDEX, { force: true });
+              if (pointerState.hasDragged) {
+                scheduleAmbientMotion(INTERACTION_COOLDOWN + Math.random() * 1600);
+              }
+            }
+          };
+
+          const handlePointerUp = () => {
+            pointerState.isDown = false;
+            pointerState.lastX = 0;
+            pointerState.lastY = 0;
+            pointerState.hasDragged = false;
+          };
+
+          target.on?.('pointertap', handlePointerTap);
+          target.on?.('pointerdown', handlePointerDown);
+          target.on?.('pointermove', handlePointerMove);
+          target.on?.('pointerup', handlePointerUp);
+          target.on?.('pointerupoutside', handlePointerUp);
+          target.on?.('pointercancel', handlePointerUp);
+
+          detachInteractionHandlers.push(() => {
+            target.off?.('pointertap', handlePointerTap);
+            target.off?.('pointerdown', handlePointerDown);
+            target.off?.('pointermove', handlePointerMove);
+            target.off?.('pointerup', handlePointerUp);
+            target.off?.('pointerupoutside', handlePointerUp);
+            target.off?.('pointercancel', handlePointerUp);
+          });
+        }
+
+        function scheduleAmbientMotion(delayOverride?: number) {
           if (ambientTimeoutRef.current) {
             window.clearTimeout(ambientTimeoutRef.current);
           }
 
-          const nextDelay = MIN_AMBIENT_DELAY + Math.random() * (MAX_AMBIENT_DELAY - MIN_AMBIENT_DELAY);
+          const baseDelay = typeof delayOverride === 'number'
+            ? Math.max(delayOverride, 2000)
+            : MIN_AMBIENT_DELAY + Math.random() * (MAX_AMBIENT_DELAY - MIN_AMBIENT_DELAY);
+
           ambientTimeoutRef.current = window.setTimeout(() => {
             ambientTimeoutRef.current = null;
 
@@ -215,20 +337,19 @@ export default function Live2DCharacter({
             }
 
             if (isMotionPlaying(currentModel)) {
-              scheduleAmbientMotion();
+              scheduleAmbientMotion(Math.max(baseDelay * 0.5, 1800));
               return;
             }
 
             if (Math.random() < 0.45) {
-              const expression = EXPRESSION_IDS[Math.floor(Math.random() * EXPRESSION_IDS.length)];
-              triggerExpression(expression);
+              triggerExpression(getRandomExpression());
             } else {
               const motionIndex = Math.floor(Math.random() * EXTRA_MOTION_COUNT);
-              triggerMotion(EXTRA_MOTION_GROUP, motionIndex);
+              triggerMotion(EXTRA_MOTION_GROUP, motionIndex, { force: true });
             }
 
             scheduleAmbientMotion();
-          }, nextDelay);
+          }, baseDelay);
         }
       } catch (error) {
         console.error('[Live2D] Initialization failed:', error);
@@ -271,6 +392,9 @@ export default function Live2DCharacter({
         window.clearTimeout(ambientTimeoutRef.current);
         ambientTimeoutRef.current = null;
       }
+
+      detachInteractionHandlers.forEach((fn) => fn());
+      detachInteractionHandlers.length = 0;
     };
   }, [corePath, height, idleMotionGroup, modelPath, width]);
 
@@ -311,6 +435,66 @@ async function ensureCubismCoreLoaded(src: string): Promise<void> {
     script.onerror = () => reject(new Error('failed to load Cubism Core script'));
     document.body.appendChild(script);
   });
+}
+
+function getPointerPosition(event: PointerInteractionEvent) {
+  const global = event.global ?? event.data?.global;
+  return {
+    x: global?.x ?? 0,
+    y: global?.y ?? 0,
+  };
+}
+
+function getLayoutProfile(width: number, height: number) {
+  if (width <= 480) {
+    const shift = height <= 600 ? 0.38 : 0.32;
+    return {
+      horizontalRatio: 0.055,
+      verticalRatio: 0.11,
+      minHorizontalMargin: 32,
+      minVerticalMargin: 52,
+      maxScale: 0.75,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 680) {
+    const shift = height <= 640 ? 0.24 : 0.2;
+    return {
+      horizontalRatio: 0.085,
+      verticalRatio: 0.14,
+      minHorizontalMargin: 48,
+      minVerticalMargin: 68,
+      maxScale: 0.68,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 960) {
+    const shift = height <= 720 ? 0.18 : 0.14;
+    return {
+      horizontalRatio: 0.12,
+      verticalRatio: 0.18,
+      minHorizontalMargin: 72,
+      minVerticalMargin: 88,
+      maxScale: 0.62,
+      verticalShift: shift,
+    } as const;
+  }
+
+  const shift = height <= 820 ? 0.12 : 0.1;
+  return {
+    horizontalRatio: 0.18,
+    verticalRatio: 0.22,
+    minHorizontalMargin: 96,
+    minVerticalMargin: 112,
+    maxScale: 0.58,
+    verticalShift: shift,
+  } as const;
+}
+
+function getRandomExpression(): string {
+  return EXPRESSION_IDS[Math.floor(Math.random() * EXPRESSION_IDS.length)] ?? 'exp_01';
 }
 
 function isMotionPlaying(model: Live2DModelInstance | null): boolean {

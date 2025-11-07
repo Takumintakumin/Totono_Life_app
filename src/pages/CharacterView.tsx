@@ -60,34 +60,34 @@ export default function CharacterView({ character, user }: CharacterViewProps) {
           height={viewport.height}
           idleMotionGroup="Idle"
         />
-      </div>
+        </div>
 
       <div className="character-overlay">
         <div className="character-info-panel">
-          <div className="character-summary">
-            <div className="character-name">{user.displayName || 'ゲスト'}</div>
-            <p className="character-caption">クリックすると反応するよ！</p>
-          </div>
+        <div className="character-summary">
+          <div className="character-name">{user.displayName || 'ゲスト'}</div>
+          <p className="character-caption">クリックすると反応するよ！</p>
+        </div>
 
           <div className="character-info">
             <div className="character-level">Level {character.level}</div>
-            {character.evolutionStage > 0 && (
+          {character.evolutionStage > 0 && (
               <div className="evolution-badge">✨ 進化段階: {character.evolutionStage} ✨</div>
-            )}
-            <div className="exp-info">
-              経験値: {character.experience} / {character.experienceToNext}
-            </div>
-            <div className="exp-bar-container">
+          )}
+          <div className="exp-info">
+            経験値: {character.experience} / {character.experienceToNext}
+          </div>
+          <div className="exp-bar-container">
               <div className="exp-bar" style={{ width: `${progress}%` }}>
-                {progress.toFixed(0)}%
-              </div>
+              {progress.toFixed(0)}%
             </div>
           </div>
         </div>
+      </div>
 
         <div className="character-chat-panel">
           <h2 className="card-title">💬 おしゃべり</h2>
-          <ChatInterface userName={user.displayName || 'ゲスト'} />
+          <ChatInterface userName={user.displayName || 'ゲスト'} character={character} />
         </div>
       </div>
     </div>

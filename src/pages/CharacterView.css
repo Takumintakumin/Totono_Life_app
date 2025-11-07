@@ -135,7 +135,7 @@
   height: 100%;
   background: rgba(255, 255, 255, 0.95);
   box-shadow: none;
-}
+  }
 
 @media (max-width: 1024px) {
   .character-overlay {

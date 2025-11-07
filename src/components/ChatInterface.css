@@ -8,6 +8,60 @@
   overflow: hidden;
 }
 
+.chat-affinity {
+  padding: 1rem 1.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: linear-gradient(145deg, rgba(103, 136, 255, 0.12), rgba(198, 165, 255, 0.18));
+}
+
+.chat-affinity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-affinity-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6c7a99;
+  font-weight: 600;
+}
+
+.chat-affinity-tier {
+  padding: 0.1rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.chat-affinity-tier-acquaintance {
+  background: linear-gradient(120deg, #9fa6ff, #a3b8ff);
+}
+
+.chat-affinity-tier-friend {
+  background: linear-gradient(120deg, #ff9f9f, #ffb3c0);
+}
+
+.chat-affinity-tier-partner {
+  background: linear-gradient(120deg, #ffb86c, #ffd097);
+}
+
+.chat-affinity-score {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4b5f9c;
+}
+
+.chat-affinity-tagline {
+  font-size: 0.8rem;
+  color: #647089;
+  line-height: 1.6;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -50,6 +104,7 @@
   word-wrap: break-word;
   line-height: 1.5;
   font-size: 0.95rem;
+  white-space: pre-line;
 }
 
 .chat-message.user .chat-message-content {

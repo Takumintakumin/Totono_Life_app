@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import type { Character } from '../types';
 import './ChatInterface.css';
 
 interface ChatMessage {
@@ -10,87 +11,72 @@ interface ChatMessage {
 
 interface ChatInterfaceProps {
   userName: string;
+  character: Character;
 }
 
-const CHARACTER_RESPONSES: Record<string, string[]> = {
-  greeting: [
-    'こんにちは！今日も一緒に頑張ろうね！',
-    'やあ！調子はどう？',
-    'おはよう！今日もよろしくね！',
-    'こんにちは！元気にしてる？',
-  ],
-  routine: [
-    'ルーティンを続けると、どんどん成長できるよ！',
-    '毎日の積み重ねが大切だね。一緒に頑張ろう！',
-    'ルーティン達成、おめでとう！すごいよ！',
-    '今日もルーティンできてる？応援してるよ！',
-  ],
-  level: [
-    'レベルアップ、おめでとう！一緒に成長してるね！',
-    'すごいね！どんどん強くなってる！',
-    'レベルアップしたね！これからも頑張ろう！',
-  ],
-  motivation: [
-    '無理しすぎないで、自分のペースで大丈夫だよ！',
-    '小さな一歩でも、続けることが大切だよ！',
-    '今日できなくても、明日また頑張ればいいよ！',
-    'あなたならできる！信じてるよ！',
-  ],
-  default: [
-    'そうなんだ！教えてくれてありがとう！',
-    'なるほど！一緒に考えようね！',
-    'わかった！何か他に聞きたいことはある？',
-    'そうだね！一緒に頑張ろう！',
-  ],
-};
+interface ChatApiResponse {
+  reply: string;
+  followUp?: string;
+  affinity: number;
+  affinityLabel: string;
+  tier: 'acquaintance' | 'friend' | 'partner';
+  topic: string;
+}
 
-export default function ChatInterface({ userName }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
+interface AffinityDescriptor {
+  label: string;
+  tier: 'acquaintance' | 'friend' | 'partner';
+  tagline: string;
+}
+
+export default function ChatInterface({ userName, character }: ChatInterfaceProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const experienceRatio = useMemo(() => {
+    if (!character.experienceToNext) {
+      return 0;
+    }
+    return Math.min(1, Math.max(0, character.experience / character.experienceToNext));
+  }, [character.experience, character.experienceToNext]);
+
+  const baseAffinity = useMemo(
+    () => calculateAffinity(character.level, experienceRatio, 0),
+    [character.level, experienceRatio]
+  );
+
+  const baseDescriptor = useMemo(() => describeAffinity(baseAffinity), [baseAffinity]);
+
+  const [affinity, setAffinity] = useState(baseAffinity);
+  const [affinityDescriptor, setAffinityDescriptor] = useState<AffinityDescriptor>(baseDescriptor);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
-      id: '1',
-      text: `こんにちは、${userName}さん！今日も一緒に頑張ろうね！何か話したいことはある？`,
+      id: 'initial',
+      text: buildInitialGreeting(userName, baseDescriptor),
       sender: 'character',
       timestamp: new Date(),
     },
   ]);
-  const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const generateResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
+  useEffect(() => {
+    setAffinity(baseAffinity);
+    setAffinityDescriptor(describeAffinity(baseAffinity));
+  }, [baseAffinity]);
 
-    if (lowerMessage.includes('こんにちは') || lowerMessage.includes('おはよう') || lowerMessage.includes('こんばんは')) {
-      return CHARACTER_RESPONSES.greeting[Math.floor(Math.random() * CHARACTER_RESPONSES.greeting.length)];
-    }
-
-    if (lowerMessage.includes('ルーティン') || lowerMessage.includes('習慣')) {
-      return CHARACTER_RESPONSES.routine[Math.floor(Math.random() * CHARACTER_RESPONSES.routine.length)];
-    }
-
-    if (lowerMessage.includes('レベル') || lowerMessage.includes('経験値')) {
-      return CHARACTER_RESPONSES.level[Math.floor(Math.random() * CHARACTER_RESPONSES.level.length)];
-    }
-
-    if (lowerMessage.includes('頑張') || lowerMessage.includes('やる気') || lowerMessage.includes('モチベーション')) {
-      return CHARACTER_RESPONSES.motivation[Math.floor(Math.random() * CHARACTER_RESPONSES.motivation.length)];
-    }
-
-    return CHARACTER_RESPONSES.default[Math.floor(Math.random() * CHARACTER_RESPONSES.default.length)];
-  };
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = inputText.trim();
+    if (!text || isTyping) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
+      id: `${Date.now()}`,
+      text,
       sender: 'user',
       timestamp: new Date(),
     };
@@ -99,30 +85,82 @@ export default function ChatInterface({ userName }: ChatInterfaceProps) {
     setInputText('');
     setIsTyping(true);
 
-    // キャラクターの応答を生成（少し遅延を入れて自然に）
-    setTimeout(() => {
-      const response = generateResponse(userMessage.text);
+    try {
+      const historyPayload = messages
+        .slice(-6)
+        .map((message) => ({ sender: message.sender, text: message.text }));
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: text,
+          level: character.level,
+          experienceRatio,
+          history: [...historyPayload, { sender: 'user', text }],
+          userName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chat API returned ${response.status}`);
+      }
+
+      const data = (await response.json()) as ChatApiResponse;
+      const updatedDescriptor = describeAffinity(data.affinity);
+      setAffinity(data.affinity);
+      setAffinityDescriptor(updatedDescriptor);
+
+      const composedReply = data.followUp && data.followUp.trim().length > 0
+        ? `${data.reply}\n${data.followUp}`
+        : data.reply;
+
       const characterMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: response,
+        id: `${Date.now()}-reply`,
+        text: composedReply,
         sender: 'character',
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, characterMessage]);
+    } catch (error) {
+      console.error('Chat API error:', error);
+      const fallbackMessage: ChatMessage = {
+        id: `${Date.now()}-fallback`,
+        text: 'ごめんね、今は上手く考えがまとまらなかったみたい。もう一度教えてくれる？',
+        sender: 'character',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, fallbackMessage]);
+    } finally {
       setIsTyping(false);
-    }, 800 + Math.random() * 500);
+    }
   };
 
   return (
     <div className="chat-interface">
+      <div className="chat-affinity">
+        <div className="chat-affinity-header">
+          <span className="chat-affinity-label">なつき度</span>
+          <span className={`chat-affinity-tier chat-affinity-tier-${affinityDescriptor.tier}`}>
+            {affinityDescriptor.label}
+          </span>
+        </div>
+        <div className="chat-affinity-score">{affinity}</div>
+        <div className="chat-affinity-tagline">{affinityDescriptor.tagline}</div>
+      </div>
+
       <div className="chat-messages">
         {messages.map((message) => (
           <div key={message.id} className={`chat-message ${message.sender}`}>
-            <div className="chat-message-content">
-              {message.text}
-            </div>
+            <div className="chat-message-content">{message.text}</div>
             <div className="chat-message-time">
-              {message.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+              {message.timestamp.toLocaleTimeString('ja-JP', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </div>
           </div>
         ))}
@@ -130,22 +168,23 @@ export default function ChatInterface({ userName }: ChatInterfaceProps) {
           <div className="chat-message character typing">
             <div className="chat-message-content">
               <span className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span />
+                <span />
+                <span />
               </span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
+
       <form className="chat-input-form" onSubmit={handleSend}>
         <input
           ref={inputRef}
           type="text"
           className="chat-input"
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(event) => setInputText(event.target.value)}
           placeholder="メッセージを入力..."
           disabled={isTyping}
         />
@@ -155,5 +194,51 @@ export default function ChatInterface({ userName }: ChatInterfaceProps) {
       </form>
     </div>
   );
+}
+
+function calculateAffinity(level: number, experienceRatio: number, extraBonus: number) {
+  const levelContribution = Math.min(level * 8.5, 60);
+  const experienceContribution = Math.round(Math.min(1, Math.max(0, experienceRatio)) * 16);
+  return clamp(Math.round(25 + levelContribution + experienceContribution + extraBonus), 5, 100);
+}
+
+function describeAffinity(affinity: number): AffinityDescriptor {
+  if (affinity >= 75) {
+    return {
+      label: '親密',
+      tier: 'partner',
+      tagline: 'ほとんど家族のような信頼関係。何でも話し合える距離感です。',
+    };
+  }
+
+  if (affinity >= 45) {
+    return {
+      label: '仲良し',
+      tier: 'friend',
+      tagline: '気持ちを素直に分かち合える、頼りがいのある関係になってきました。',
+    };
+  }
+
+  return {
+    label: 'ふつう',
+    tier: 'acquaintance',
+    tagline: 'まだ距離はあるけれど、これから仲良くなる余地がたくさんあります。',
+  };
+}
+
+function buildInitialGreeting(userName: string, descriptor: AffinityDescriptor) {
+  const addressedName = userName ? `${userName}さん` : 'ねえねえ';
+  switch (descriptor.tier) {
+    case 'partner':
+      return `やっほー、${addressedName}！今日も顔が見られて嬉しいな。一緒に楽しい時間を過ごそう？`;
+    case 'friend':
+      return `こんにちは、${addressedName}！最近の出来事、また聞かせてくれると嬉しいな。`;
+    default:
+      return `こんにちは、${addressedName}。今日の気持ちを少しずつでも教えてくれたら嬉しいよ。`;
+  }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 

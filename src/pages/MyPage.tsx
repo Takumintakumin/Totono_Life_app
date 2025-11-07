@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AvatarBuilder from '../components/AvatarBuilder';
-import { AppData, AvatarConfig, UserProfile } from '../types';
+import { AppData, UserProfile } from '../types';
 import { updateUserProfile } from '../utils/api';
 
 interface MyPageProps {
@@ -16,7 +15,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
 
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [email, setEmail] = useState(user.email || '');
-  const [avatar, setAvatar] = useState<AvatarConfig>(user.avatar);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +32,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
     }
     setDisplayName(user.displayName || '');
     setEmail(user.email || '');
-    setAvatar(user.avatar);
     setMorningRoutines(data.defaultMorningRoutines);
     setEveningRoutines(data.defaultEveningRoutines);
     setMorningTime(data.settings.morningNotificationTime);
@@ -54,7 +51,7 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       const updatedUser = await updateUserProfile({
         displayName: displayName.trim(),
         email: email.trim(),
-        avatar,
+        avatar: user.avatar,
       });
       onProfileUpdated(updatedUser);
       setMessage('プロフィールを更新しました！');
@@ -143,7 +140,7 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       <div className="card">
         <h1 className="card-title">👤 マイページ</h1>
         <p style={{ color: '#546854', marginBottom: '1.5rem', textAlign: 'center' }}>
-          アバターやプロフィールを自由にカスタマイズしましょう。
+          プロフィール情報を更新しましょう。
         </p>
 
         <form onSubmit={handleProfileSubmit} className="form-stack">
@@ -167,14 +164,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
               placeholder="example@totono.life"
             />
           </label>
-
-          <section style={{ marginTop: '2rem' }}>
-            <h2 className="card-title" style={{ fontSize: '1.25rem' }}>
-              アバターを編集
-            </h2>
-            <AvatarBuilder value={avatar} onChange={setAvatar} />
-          </section>
-
           {message && (
             <div className="bonus-message" style={{ marginTop: '1rem' }}>
               {message}
