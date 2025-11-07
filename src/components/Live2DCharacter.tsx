@@ -88,12 +88,24 @@ export default function Live2DCharacter({
 
         model.autoUpdate = false;
 
-        const scale = Math.min(width / 320, height / 400);
         model.anchor?.set?.(0.5, 0.5);
-        model.position?.set?.(width / 2, height * 0.95);
+
+        const coreModel = (model.internalModel as unknown as {
+          coreModel?: {
+            getCanvasWidth?: () => number;
+            getCanvasHeight?: () => number;
+          };
+        })?.coreModel;
+
+        const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
+        const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
+        const scale = Math.min(width / nativeWidth, height / nativeHeight) * 0.9;
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
         }
+
+        const bottomOffset = height - nativeHeight * scale * 0.5;
+        model.position?.set?.(width / 2, bottomOffset);
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
