@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Character } from '../types';
+import { AvatarConfig, Character } from '../types';
 import './SeedAvatar.css';
 
 type CharacterAction = 'morning' | 'night' | 'miss' | 'blink';
@@ -12,13 +12,16 @@ declare global {
 
 interface SeedAvatarProps {
   character: Character;
+  avatar: AvatarConfig;
+  variant?: 'floating' | 'inline';
+  showBadge?: boolean;
 }
 
 const PET_MESSAGES = ['わん！', 'にゃー！', 'きもちいい〜', 'もっと撫でて！', '最高だよ！'];
 const HAPPY_MESSAGES = ['今日もえらい！', '朝から元気いっぱい！', 'おやすみ前にばっちりだね！'];
 const MISS_MESSAGES = ['だいじょうぶ、一緒にがんばろう！', 'ゆっくり整えようね。', '明日はきっとできるよ！'];
 
-export default function SeedAvatar({ character }: SeedAvatarProps) {
+export default function SeedAvatar({ character, avatar, variant = 'floating', showBadge = true }: SeedAvatarProps) {
   const [petCount, setPetCount] = useState(0);
   const [message, setMessage] = useState('');
   const [mood, setMood] = useState<'neutral' | 'happy' | 'sad'>('neutral');
@@ -27,6 +30,47 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
   const [sparkleVisible, setSparkleVisible] = useState(false);
   const [leafDance, setLeafDance] = useState(false);
   const timeoutsRef = useRef<number[]>([]);
+  const isFloating = variant === 'floating';
+
+  const accessoryElement = useMemo(() => {
+    const accent = avatar.accentColor;
+    const outline = avatar.outlineColor;
+
+    switch (avatar.accessory) {
+      case 'flower':
+        return (
+          <g className="seed-accessory" transform="translate(135,70)">
+            <circle r="10" fill={accent} stroke={outline} strokeWidth="2" />
+            <circle r="4" fill={outline} />
+          </g>
+        );
+      case 'ribbon':
+        return (
+          <g className="seed-accessory" transform="translate(100,80)">
+            <path
+              d="M-16 0 C-28 -10,-28 12,-12 8 C-8 2,-4 -2,0 -4 C4 -2,8 2,12 8 C28 12,28 -10,16 0"
+              fill={accent}
+              stroke={outline}
+              strokeWidth="2"
+            />
+            <circle cx="0" cy="-2" r="4" fill={outline} />
+          </g>
+        );
+      case 'sprout':
+        return (
+          <g className="seed-accessory" transform="translate(100,58)">
+            <path
+              d="M0 0 C-18 -18,-26 -6,-14 4 C-10 8,-4 10,0 12 C4 10,10 8,14 4 C26 -6,18 -18,0 0"
+              fill={avatar.leafPrimary}
+              stroke={avatar.leafSecondary}
+              strokeWidth="2"
+            />
+          </g>
+        );
+      default:
+        return null;
+    }
+  }, [avatar]);
 
   const clearScheduled = useCallback(() => {
     timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
@@ -114,6 +158,10 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
   );
 
   useEffect(() => {
+    if (!isFloating) {
+      return;
+    }
+
     const handler = (action: CharacterAction) => {
       switch (action) {
         case 'morning':
@@ -137,7 +185,7 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
         delete window.charAction;
       }
     };
-  }, [triggerHappy, triggerMiss, triggerBlink]);
+  }, [triggerHappy, triggerMiss, triggerBlink, isFloating]);
 
   const mouthPath = useMemo(() => {
     if (mood === 'happy') {
@@ -150,7 +198,7 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
   }, [mood]);
 
   return (
-    <div className="seed-avatar-fixed" aria-hidden="true">
+    <div className={isFloating ? 'seed-avatar-fixed' : 'seed-avatar-inline'} aria-hidden={isFloating}>
       <div
         className={`seed-avatar ${mood} ${isJumping ? 'jump' : ''}`}
         onClick={handlePet}
@@ -162,16 +210,29 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
               <g
                 className={`seed-char breath ${leafDance ? 'leaf-dance' : ''} ${sparkleVisible ? 'glow' : ''}`}
               >
-                <ellipse cx="100" cy="118" rx="48" ry="44" className="seed-bulb" />
+                <ellipse
+                  cx="100"
+                  cy="118"
+                  rx="48"
+                  ry="44"
+                  className="seed-bulb"
+                  style={{ fill: avatar.bodyColor, stroke: avatar.outlineColor }}
+                />
                 <g className="seed-leaf seed-leaf-left">
-                  <path d="M88 80 C62 72,54 44,86 44 C92 44,98 48,102 54 C110 66,108 78,88 80 Z" />
+                  <path
+                    d="M88 80 C62 72,54 44,86 44 C92 44,98 48,102 54 C110 66,108 78,88 80 Z"
+                    style={{ fill: avatar.leafPrimary, stroke: avatar.leafSecondary }}
+                  />
                 </g>
                 <g className="seed-leaf seed-leaf-right">
-                  <path d="M112 78 C140 72,148 44,116 44 C110 44,104 48,100 54 C92 66,94 78,112 78 Z" />
+                  <path
+                    d="M112 78 C140 72,148 44,116 44 C110 44,104 48,100 54 C92 66,94 78,112 78 Z"
+                    style={{ fill: avatar.leafPrimary, stroke: avatar.leafSecondary }}
+                  />
                 </g>
 
-                <circle cx="82" cy="118" r="5" className="seed-cheek" />
-                <circle cx="118" cy="118" r="5" className="seed-cheek" />
+                <circle cx="82" cy="118" r="5" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
+                <circle cx="118" cy="118" r="5" className="seed-cheek" style={{ fill: avatar.cheekColor }} />
 
                 <g className={`seed-eyes ${isBlinking ? 'blink' : ''}`}>
                   <g>
@@ -184,12 +245,17 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
                   </g>
                 </g>
 
-                <path d={mouthPath} className="seed-mouth" />
+                <path d={mouthPath} className="seed-mouth" stroke={avatar.outlineColor} />
 
                 <g className={`seed-sparkles ${sparkleVisible ? 'visible' : ''}`}>
-                  <circle cx="60" cy="70" r="3" />
-                  <polygon points="150,60 152,66 158,66 153,69 155,76 150,71 145,76 147,69 142,66 148,66" />
+                  <circle cx="60" cy="70" r="3" fill={avatar.accentColor} />
+                  <polygon
+                    points="150,60 152,66 158,66 153,69 155,76 150,71 145,76 147,69 142,66 148,66"
+                    fill={avatar.accentColor}
+                  />
                 </g>
+
+                {accessoryElement}
               </g>
               <ellipse cx="100" cy="170" rx="50" ry="10" className="seed-shadow" />
             </svg>
@@ -197,10 +263,12 @@ export default function SeedAvatar({ character }: SeedAvatarProps) {
         </div>
 
         {message && <div className="seed-message">{message}</div>}
-        <div className="seed-badge">
-          <span>Lv.{character.level}</span>
-          <span>🐾 {petCount}</span>
-        </div>
+        {showBadge && (
+          <div className="seed-badge">
+            <span>Lv.{character.level}</span>
+            <span>🐾 {petCount}</span>
+          </div>
+        )}
       </div>
     </div>
   );

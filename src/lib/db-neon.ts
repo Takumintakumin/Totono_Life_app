@@ -41,6 +41,19 @@ export async function initDatabase(): Promise<void> {
     )
   `);
 
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)
+  `);
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS email VARCHAR(255)
+  `);
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS avatar_config JSONB DEFAULT '{}'::jsonb
+  `);
+
   // 更新日時を自動更新する関数
   await pool.query(`
     CREATE OR REPLACE FUNCTION update_updated_at_column()

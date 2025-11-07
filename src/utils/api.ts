@@ -1,4 +1,10 @@
-import { AppData, DayLog } from '../types';
+import {
+  AppData,
+  AvatarConfig,
+  DayLog,
+  UserProfile,
+  createDefaultAvatarConfig,
+} from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -12,6 +18,16 @@ function getUserId(): string {
   return userId;
 }
 
+function createDefaultUser(): UserProfile {
+  return {
+    id: 'guest',
+    displayName: 'ゲスト',
+    email: '',
+    avatar: createDefaultAvatarConfig(),
+    isRegistered: false,
+  };
+}
+
 export async function loadData(): Promise<AppData> {
   try {
     const userId = getUserId();
@@ -20,7 +36,7 @@ export async function loadData(): Promise<AppData> {
       throw new Error('Failed to load data');
     }
     const data = await response.json();
-    return data;
+    return normaliseAppData(data);
   } catch (error) {
     console.error('Failed to load data from API:', error);
     // フォールバック: ローカルストレージから読み込み
@@ -58,7 +74,8 @@ function loadDataFromLocalStorage(): AppData {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const data = JSON.parse(stored);
-      return { ...getDefaultData(), ...data };
+      // デフォルト値とマージして、新しいフィールドがあれば追加
+      return normaliseAppData({ ...getDefaultData(), ...data });
     }
   } catch (error) {
     console.error('Failed to load data from localStorage:', error);
@@ -76,6 +93,7 @@ function saveDataToLocalStorage(data: AppData): void {
 
 function getDefaultData(): AppData {
   return {
+    user: createDefaultUser(),
     character: {
       level: 1,
       experience: 0,
@@ -134,5 +152,90 @@ export function getTodayLog(data: AppData): DayLog {
   }
 
   return log;
+}
+
+function normaliseAppData(raw: Partial<AppData>): AppData {
+  const defaults = getDefaultData();
+  const rawAvatar = raw.user?.avatar ?? defaults.user.avatar;
+  const avatar: AvatarConfig = typeof rawAvatar === 'string'
+    ? { ...defaults.user.avatar, ...JSON.parse(rawAvatar) }
+    : { ...defaults.user.avatar, ...(rawAvatar ?? {}) };
+  const user: UserProfile = {
+    ...defaults.user,
+    ...raw.user,
+    avatar,
+    isRegistered: raw.user?.isRegistered ?? false,
+  };
+
+  return {
+    user,
+    character: raw.character ?? defaults.character,
+    defaultMorningRoutines: raw.defaultMorningRoutines ?? defaults.defaultMorningRoutines,
+    defaultEveningRoutines: raw.defaultEveningRoutines ?? defaults.defaultEveningRoutines,
+    dayLogs: raw.dayLogs ?? defaults.dayLogs,
+    settings: {
+      ...defaults.settings,
+      ...(raw.settings ?? {}),
+    },
+  };
+}
+
+export interface RegisterPayload {
+  displayName: string;
+  email?: string;
+  avatar: AvatarConfig;
+}
+
+export async function registerUser(payload: RegisterPayload): Promise<AppData> {
+  const userId = getUserId();
+
+  const response = await fetch(`${API_BASE_URL}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId,
+      displayName: payload.displayName,
+      email: payload.email,
+      avatar: payload.avatar,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('ユーザー登録に失敗しました');
+  }
+
+  // 最新データを再取得
+  const appData = await loadData();
+  saveDataToLocalStorage(appData);
+  return appData;
+}
+
+export interface UpdateProfilePayload {
+  displayName: string;
+  email?: string;
+  avatar: AvatarConfig;
+}
+
+export async function updateUserProfile(payload: UpdateProfilePayload): Promise<UserProfile> {
+  const userId = getUserId();
+
+  const response = await fetch(`${API_BASE_URL}/avatar?userId=${userId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error('アバターの更新に失敗しました');
+  }
+
+  const data = await response.json();
+  const appData = await loadData();
+  saveDataToLocalStorage(appData);
+  return data.user as UserProfile;
 }
 

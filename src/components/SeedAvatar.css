@@ -6,6 +6,14 @@
   pointer-events: none;
 }
 
+.seed-avatar-inline {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  margin: 0 auto 1.5rem;
+}
+
 .seed-avatar {
   position: relative;
   display: inline-flex;
@@ -110,7 +118,6 @@
 }
 
 .seed-cheek {
-  fill: #ffd0d0;
   opacity: 0.85;
 }
 
@@ -121,8 +128,6 @@
 }
 
 .seed-leaf path {
-  fill: #9be07a;
-  stroke: #6fb44f;
   stroke-width: 2px;
 }
 
@@ -175,6 +180,10 @@
 
 .seed-shadow {
   fill: rgba(0, 0, 0, 0.08);
+}
+
+.seed-accessory {
+  transition: transform 0.25s ease;
 }
 
 .seed-avatar.sad {

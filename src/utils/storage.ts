@@ -1,8 +1,15 @@
-import { AppData, DayLog } from '../types';
+import { AppData, DayLog, createDefaultAvatarConfig } from '../types';
 
 const STORAGE_KEY = 'totono-life-data';
 
 export const getDefaultData = (): AppData => ({
+  user: {
+    id: 'guest',
+    displayName: 'ゲスト',
+    email: '',
+    avatar: createDefaultAvatarConfig(),
+    isRegistered: false,
+  },
   character: {
     level: 1,
     experience: 0,

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { loadData, saveData } from './utils/api';
-import { AppData } from './types';
+import { AppData, UserProfile } from './types';
 import MorningRoutine from './pages/MorningRoutine';
 import EveningRoutine from './pages/EveningRoutine';
 import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
 import Settings from './pages/Settings';
+import Register from './pages/Register';
+import MyPage from './pages/MyPage';
 import SeedAvatar from './components/SeedAvatar';
 import './App.css';
 
@@ -36,6 +38,20 @@ function App() {
       if (!prev) return prev;
       const updated = updater(prev);
       return updated;
+    });
+  };
+
+  const handleRegistered = (updated: AppData) => {
+    setData(updated);
+  };
+
+  const handleProfileUpdated = (user: UserProfile) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        user,
+      };
     });
   };
 
@@ -74,6 +90,10 @@ function App() {
             <span className="nav-icon">⚙️</span>
             <span className="nav-text">設定</span>
           </Link>
+          <Link to="/mypage" className="nav-link">
+            <span className="nav-icon">👤</span>
+            <span className="nav-text">マイ</span>
+          </Link>
         </nav>
 
         <main className="main-content">
@@ -92,7 +112,7 @@ function App() {
             />
             <Route
               path="/character"
-              element={<CharacterView character={data.character} />}
+              element={<CharacterView character={data.character} user={data.user} />}
             />
             <Route
               path="/calendar"
@@ -107,11 +127,19 @@ function App() {
                 />
               }
             />
+            <Route
+              path="/register"
+              element={<Register data={data} onRegistered={handleRegistered} />}
+            />
+            <Route
+              path="/mypage"
+              element={<MyPage data={data} onProfileUpdated={handleProfileUpdated} />}
+            />
           </Routes>
         </main>
 
         {/* 全画面共通のアバターキャラクター */}
-        <SeedAvatar character={data.character} />
+        <SeedAvatar character={data.character} avatar={data.user.avatar} />
       </div>
     </Router>
   );

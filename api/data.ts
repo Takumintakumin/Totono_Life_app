@@ -3,6 +3,16 @@ import { getDbPool } from '../src/lib/db-neon';
 import { handleCors, setCorsHeaders } from './utils/cors';
 import { getUserId } from './utils/user';
 
+const DEFAULT_AVATAR = {
+  bodyColor: '#fffbe6',
+  leafPrimary: '#9be07a',
+  leafSecondary: '#6fb44f',
+  outlineColor: '#2b3a2b',
+  accentColor: '#ffd56b',
+  cheekColor: '#ffd0d0',
+  accessory: 'none',
+};
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -17,29 +27,24 @@ export default async function handler(
     if (req.method === 'GET') {
       // データ取得
       const usersResult = await pool.query(
-        'SELECT * FROM users WHERE id = $1',
+        'SELECT id, display_name, email, avatar_config FROM users WHERE id = $1',
         [userId]
       );
-      
-      if (usersResult.rows.length === 0) {
-        // ユーザーが存在しない場合は初期データを返す
-        return res.status(200).json({
-          character: {
-            level: 1,
-            experience: 0,
-            experienceToNext: 100,
-            theme: 'plant',
-            evolutionStage: 0,
-            lastActiveDate: new Date().toISOString().split('T')[0],
-          },
-          defaultMorningRoutines: ['歯磨き', '水を飲む', '布団をたたむ', 'ストレッチ'],
-          defaultEveningRoutines: ['日記を書く', 'スマホを置く', '明日の準備', '深呼吸'],
-          dayLogs: [],
-          settings: {
-            morningNotificationTime: '08:00',
-            eveningNotificationTime: '22:00',
-          },
-        });
+
+      let userRow = usersResult.rows[0];
+      if (!userRow) {
+        await pool.query(
+          `INSERT INTO users (id, display_name, email, avatar_config)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (id) DO NOTHING`,
+          [userId, null, null, DEFAULT_AVATAR]
+        );
+        userRow = {
+          id: userId,
+          display_name: null,
+          email: null,
+          avatar_config: DEFAULT_AVATAR,
+        };
       }
 
       // キャラクター情報取得
@@ -62,7 +67,17 @@ export default async function handler(
         [userId]
       );
 
+      const avatarConfig = userRow.avatar_config || DEFAULT_AVATAR;
+      const userProfile = {
+        id: userRow.id,
+        displayName: userRow.display_name || 'ゲスト',
+        email: userRow.email || '',
+        avatar: typeof avatarConfig === 'string' ? JSON.parse(avatarConfig) : avatarConfig,
+        isRegistered: Boolean(userRow.display_name),
+      };
+
       res.status(200).json({
+        user: userProfile,
         character: character ? {
           level: character.level,
           experience: character.experience,
@@ -74,7 +89,7 @@ export default async function handler(
           level: 1,
           experience: 0,
           experienceToNext: 100,
-          theme: 'plant',
+          theme: 'animal',
           evolutionStage: 0,
           lastActiveDate: new Date().toISOString().split('T')[0],
         },
@@ -118,7 +133,7 @@ export default async function handler(
 
       // ユーザー作成（存在しない場合）
       await pool.query(
-        'INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING',
+        `INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING`,
         [userId]
       );
 

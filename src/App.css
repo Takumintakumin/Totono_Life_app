@@ -312,6 +312,12 @@ body {
   margin-bottom: 2rem;
 }
 
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 .settings-title {
   font-size: 1.25rem;
   font-weight: 700;
