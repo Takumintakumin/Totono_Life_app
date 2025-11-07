@@ -3,9 +3,21 @@
 -- ユーザーテーブル
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(255) PRIMARY KEY,
+  display_name VARCHAR(255),
+  email VARCHAR(255),
+  avatar_config JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS display_name VARCHAR(255);
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS avatar_config JSONB DEFAULT '{}'::jsonb;
 
 -- 更新日時を自動更新する関数
 CREATE OR REPLACE FUNCTION update_updated_at_column()

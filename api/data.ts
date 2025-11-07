@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDbPool } from '../src/lib/db-neon';
+import { getDbPool, initDatabase } from '../src/lib/db-neon';
 import { handleCors, setCorsHeaders } from './utils/cors';
 import { getUserId } from './utils/user';
 
@@ -24,6 +24,8 @@ export default async function handler(
   const pool = getDbPool();
 
   try {
+    await initDatabase();
+
     if (req.method === 'GET') {
       // データ取得
       const usersResult = await pool.query(
