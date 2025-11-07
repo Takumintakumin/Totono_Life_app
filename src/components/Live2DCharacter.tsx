@@ -5,6 +5,11 @@ import './Live2DCharacter.css';
 
 const DEFAULT_MODEL_PATH = '/live2d/models/mao/mao_pro.model3.json';
 const DEFAULT_CORE_PATH = '/live2d/core/live2dcubismcore.min.js';
+const EXPRESSION_IDS = ['exp_01', 'exp_02', 'exp_03', 'exp_04', 'exp_05', 'exp_06', 'exp_07', 'exp_08'];
+const EXTRA_MOTION_GROUP = '';
+const EXTRA_MOTION_COUNT = 6;
+const MIN_AMBIENT_DELAY = 7000;
+const MAX_AMBIENT_DELAY = 13000;
 
 type Live2DModelInstance = Live2DModelType & DisplayObject & {
   autoUpdate?: boolean;
@@ -32,6 +37,7 @@ export default function Live2DCharacter({
   const tickerCallbackRef = useRef<((delta: number) => void) | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const ambientTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +149,7 @@ export default function Live2DCharacter({
 
         setStatus('ready');
         startIdleMotion();
+        scheduleAmbientMotion();
 
         window.charAction = (action) => {
           previousHandler?.(action);
@@ -173,11 +180,11 @@ export default function Live2DCharacter({
           }
         }
 
-        function triggerMotion(group: string) {
+        function triggerMotion(group: string, index = 0) {
           const currentModel = modelRef.current;
           if (!currentModel) return;
           try {
-            currentModel.motion?.(group, 0);
+            currentModel.motion?.(group, index);
           } catch (error) {
             console.warn('[Live2D] Motion trigger failed:', error);
           }
@@ -191,6 +198,37 @@ export default function Live2DCharacter({
           } catch (error) {
             console.warn('[Live2D] Expression trigger failed:', error);
           }
+        }
+
+        function scheduleAmbientMotion() {
+          if (ambientTimeoutRef.current) {
+            window.clearTimeout(ambientTimeoutRef.current);
+          }
+
+          const nextDelay = MIN_AMBIENT_DELAY + Math.random() * (MAX_AMBIENT_DELAY - MIN_AMBIENT_DELAY);
+          ambientTimeoutRef.current = window.setTimeout(() => {
+            ambientTimeoutRef.current = null;
+
+            const currentModel = modelRef.current;
+            if (!currentModel) {
+              return;
+            }
+
+            if (isMotionPlaying(currentModel)) {
+              scheduleAmbientMotion();
+              return;
+            }
+
+            if (Math.random() < 0.45) {
+              const expression = EXPRESSION_IDS[Math.floor(Math.random() * EXPRESSION_IDS.length)];
+              triggerExpression(expression);
+            } else {
+              const motionIndex = Math.floor(Math.random() * EXTRA_MOTION_COUNT);
+              triggerMotion(EXTRA_MOTION_GROUP, motionIndex);
+            }
+
+            scheduleAmbientMotion();
+          }, nextDelay);
         }
       } catch (error) {
         console.error('[Live2D] Initialization failed:', error);
@@ -227,6 +265,11 @@ export default function Live2DCharacter({
 
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
+      }
+
+      if (ambientTimeoutRef.current) {
+        window.clearTimeout(ambientTimeoutRef.current);
+        ambientTimeoutRef.current = null;
       }
     };
   }, [corePath, height, idleMotionGroup, modelPath, width]);
@@ -268,5 +311,30 @@ async function ensureCubismCoreLoaded(src: string): Promise<void> {
     script.onerror = () => reject(new Error('failed to load Cubism Core script'));
     document.body.appendChild(script);
   });
+}
+
+function isMotionPlaying(model: Live2DModelInstance | null): boolean {
+  if (!model) return false;
+
+  const motionManager = (model.internalModel as unknown as {
+    motionManager?: {
+      isFinished?: () => boolean;
+      isPlaying?: () => boolean;
+    };
+  })?.motionManager;
+
+  try {
+    if (motionManager?.isPlaying) {
+      return motionManager.isPlaying();
+    }
+
+    if (motionManager?.isFinished) {
+      return !motionManager.isFinished();
+    }
+  } catch (error) {
+    console.warn('[Live2D] motion manager status check failed:', error);
+  }
+
+  return false;
 }
 
