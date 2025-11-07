@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Application as PixiApplicationType, DisplayObject } from 'pixi.js-legacy';
-import type { Ticker } from '@pixi/ticker';
+import type { Application as PixiApplicationType, DisplayObject, Ticker } from 'pixi.js-legacy';
 import type { Live2DModel as Live2DModelType } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
@@ -42,9 +41,8 @@ export default function Live2DCharacter({
       try {
         await ensureCubismCoreLoaded(corePath);
 
-        const [pixiModule, tickerModule, live2dModule] = await Promise.all([
+        const [pixiModule, live2dModule] = await Promise.all([
           import('pixi.js-legacy'),
-          import('@pixi/ticker'),
           import('pixi-live2d-display/cubism4'),
         ]);
 
@@ -52,8 +50,7 @@ export default function Live2DCharacter({
           return;
         }
 
-        const { Application } = pixiModule;
-        const { Ticker } = tickerModule;
+        const { Application, Ticker } = pixiModule;
         const { Live2DModel } = live2dModule;
 
         const sharedTicker: Ticker = Ticker.shared;
