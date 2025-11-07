@@ -137,8 +137,8 @@ export default function Live2DCharacter({
 
         const posX = width / 2;
         const modelHeight = nativeHeight * scale;
-        const topMargin = height * 0.06;
-        const bottomMargin = height * 0.03;
+        const topMargin = height * (width <= 520 ? 0.065 : 0.05);
+        const bottomMargin = height * (width <= 520 ? 0.12 : 0.08);
         const minY = modelHeight / 2 + topMargin;
         const targetY = height - bottomMargin - modelHeight / 2;
         model.position?.set?.(posX, Math.max(minY, targetY));
