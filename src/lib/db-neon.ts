@@ -6,8 +6,9 @@ export function getDbPool(): Pool {
   if (!pool) {
     // DATABASE_URLが設定されている場合はそれを使用（推奨）
     if (process.env.DATABASE_URL) {
+      const connectionString = sanitizeConnectionString(process.env.DATABASE_URL);
       pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        connectionString,
         ssl: {
           rejectUnauthorized: false, // NeonのSSL証明書用
         },
@@ -151,5 +152,26 @@ export async function initDatabase(): Promise<void> {
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_characters_last_active ON characters(last_active_date)
   `);
+}
+
+function sanitizeConnectionString(raw: string): string {
+  try {
+    const url = new URL(raw);
+    if (url.searchParams.has('channel_binding')) {
+      url.searchParams.delete('channel_binding');
+    }
+    return url.toString();
+  } catch (error) {
+    // URLとして解釈できない場合は単純な文字列置換を行う
+    return raw.replace(/[?&]channel_binding=require(&)?/, (match, trailingAmp) => {
+      if (match.startsWith('?') && trailingAmp) {
+        return '?';
+      }
+      if (match.startsWith('?')) {
+        return '';
+      }
+      return trailingAmp ? '&' : '';
+    });
+  }
 }
 

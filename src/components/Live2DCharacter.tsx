@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Application, Ticker as PixiTicker } from 'pixi.js';
-import type { DisplayObject } from '@pixi/display';
+import type { Application, DisplayObject, Ticker as PixiTicker } from 'pixi.js-legacy';
 import type { Live2DModel } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
@@ -57,10 +56,12 @@ export default function Live2DCharacter({
     const setup = async () => {
       await ensureCubismCoreLoaded();
 
-      const [{ Application: PixiApplication, Ticker }, { Live2DModel }] = await Promise.all([
-        import('pixi.js'),
+      const [{ Application: PixiApplication, Ticker }, live2dModule] = await Promise.all([
+        import('pixi.js-legacy'),
         import('pixi-live2d-display/cubism4'),
       ]);
+
+      const { Live2DModel } = live2dModule;
 
       if (cancelled || !containerRef.current) {
         return;
@@ -88,15 +89,15 @@ export default function Live2DCharacter({
       containerRef.current.appendChild(canvas);
       appRef.current = app;
 
-      const model = (await Live2DModel.from(MODEL_PATH, {
-        autoUpdate: true,
-      })) as unknown as Live2DModelInstance;
-
       try {
         (Live2DModel as unknown as { registerTicker?: (ticker: PixiTicker) => void }).registerTicker?.(Ticker.shared);
       } catch (e) {
         console.warn('[Live2D] Failed to register ticker:', e);
       }
+
+      const model = (await Live2DModel.from(MODEL_PATH, {
+        autoUpdate: true,
+      })) as unknown as Live2DModelInstance;
 
       if (cancelled) {
         app.destroy(true, { children: true });
