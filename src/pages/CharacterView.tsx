@@ -57,11 +57,17 @@ export default function CharacterView({ character: _character, user: _user }: Ch
         />
         <div className="character-overlay">
           <div className="character-overlay-card">
-            <div className="character-overlay-header">
-              <div className="character-overlay-title">{_user.displayName || 'ゲスト'}のなつき度</div>
-              <div className="character-overlay-caption">キャラクターと会話して絆を深めよう</div>
+            <div className="character-overlay-tabs">
+              <button type="button" className="character-overlay-tab active">
+                💞 なつき度
+              </button>
+              <button type="button" className="character-overlay-tab">
+                💬 おしゃべり
+              </button>
             </div>
-            <ChatInterface userName={_user.displayName || 'ゲスト'} character={_character} />
+            <div className="character-overlay-body">
+              <ChatInterface userName={_user.displayName || 'ゲスト'} character={_character} />
+            </div>
           </div>
         </div>
       </div>
