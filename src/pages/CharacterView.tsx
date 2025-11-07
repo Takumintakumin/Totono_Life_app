@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import Live2DContainer from '../components/Live2DContainer';
 import { Character, UserProfile } from '../types';
 import ChatInterface from '../components/ChatInterface';
 import './CharacterView.css';
@@ -17,22 +18,13 @@ export default function CharacterView({ character, user }: CharacterViewProps) {
   return (
     <div className="character-view-container">
       <div className="card character-display-card">
-        <div className="character-illustration" aria-hidden>
-          <div className="character-figure">
-            <div className="character-hair" />
-            <div className="character-face">
-              <div className="character-eye left" />
-              <div className="character-eye right" />
-              <div className="character-mouth" />
-            </div>
-            <div className="character-body" />
-            <div className="character-shadow" />
-          </div>
+        <div className="live2d-wrapper">
+          <Live2DContainer width={380} height={440} idleMotionGroup="Idle" />
         </div>
 
         <div className="character-summary">
           <div className="character-name">{user.displayName || 'ゲスト'}</div>
-          <p className="character-caption">キャラクターの詳細は準備中です。</p>
+          <p className="character-caption">クリックすると反応するよ！</p>
         </div>
 
         <div className="character-info" style={{ marginTop: '1.5rem' }}>

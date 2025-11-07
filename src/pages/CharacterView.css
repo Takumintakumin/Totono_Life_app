@@ -8,97 +8,14 @@
   flex-shrink: 0;
 }
 
-.character-illustration {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.live2d-wrapper {
+  position: relative;
   border-radius: 16px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(221, 236, 222, 0.7));
   box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.06);
-  height: 280px;
-  margin-bottom: 1.5rem;
-}
-
-.character-figure {
-  position: relative;
-  width: 140px;
-  height: 200px;
-}
-
-.character-hair {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  width: 110px;
-  height: 70px;
-  background: linear-gradient(135deg, #5d7b5d, #88a988);
-  border-radius: 70px 70px 40px 40px;
-  transform: translateX(-50%);
-}
-
-.character-face {
-  position: absolute;
-  top: 38px;
-  left: 50%;
-  width: 100px;
-  height: 100px;
-  background: #ffe7d6;
-  border-radius: 50%;
-  transform: translateX(-50%);
-  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.character-eye {
-  position: absolute;
-  top: 52px;
-  width: 14px;
-  height: 18px;
-  background: #2f3b2f;
-  border-radius: 50%;
-}
-
-.character-eye.left {
-  left: 34px;
-}
-
-.character-eye.right {
-  right: 34px;
-}
-
-.character-mouth {
-  position: absolute;
-  bottom: 28px;
-  left: 50%;
-  width: 28px;
-  height: 12px;
-  border-radius: 0 0 50% 50%;
-  background: #d27b70;
-  transform: translateX(-50%);
-}
-
-.character-body {
-  position: absolute;
-  top: 110px;
-  left: 50%;
-  width: 120px;
-  height: 90px;
-  background: linear-gradient(135deg, #6fa6f7, #8cc7ff);
-  border-radius: 60px 60px 40px 40px;
-  transform: translateX(-50%);
-}
-
-.character-shadow {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 120px;
-  height: 16px;
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 50%;
-  transform: translate(-50%, 18px);
+  overflow: hidden;
+  height: 360px;
+  margin-bottom: 1rem;
 }
 
 .character-summary {
@@ -131,6 +48,10 @@
   .character-display-card {
     width: 380px;
     flex-shrink: 0;
+  }
+
+  .live2d-wrapper {
+    height: 400px;
   }
 
   .chat-card {

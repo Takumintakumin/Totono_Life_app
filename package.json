@@ -10,6 +10,10 @@
   },
   "dependencies": {
     "pg": "^8.11.3",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.10",
+    "pixi.js-legacy": "^6.5.10",
+    "@pixi/ticker": "^6.5.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0"
