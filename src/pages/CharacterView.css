@@ -15,11 +15,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .character-canvas > .live2d-character {
   width: 100%;
   height: 100%;
+}
+
+.character-overlay {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, 420px);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+}
+
+.character-overlay-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 18px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 1.1rem 1.25rem;
+  pointer-events: auto;
+}
+
+.character-overlay-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.character-overlay-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2f3b59;
+}
+
+.character-overlay-caption {
+  font-size: 0.8rem;
+  color: rgba(47, 59, 89, 0.7);
 }
 
 @media (max-width: 640px) {
@@ -32,5 +74,10 @@
   .character-canvas {
     width: 100%;
     min-height: calc(100vh - var(--nav-height));
+  }
+
+  .character-overlay {
+    top: 0.75rem;
+    width: min(94vw, 420px);
   }
 }

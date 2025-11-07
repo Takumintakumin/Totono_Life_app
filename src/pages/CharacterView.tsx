@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Live2DContainer from '../components/Live2DContainer';
+import ChatInterface from '../components/ChatInterface';
 import { Character, UserProfile } from '../types';
 import './CharacterView.css';
 
@@ -54,6 +55,15 @@ export default function CharacterView({ character: _character, user: _user }: Ch
           height={viewport.height}
           idleMotionGroup="Idle"
         />
+        <div className="character-overlay">
+          <div className="character-overlay-card">
+            <div className="character-overlay-header">
+              <div className="character-overlay-title">{_user.displayName || 'ゲスト'}のなつき度</div>
+              <div className="character-overlay-caption">キャラクターと会話して絆を深めよう</div>
+            </div>
+            <ChatInterface userName={_user.displayName || 'ゲスト'} character={_character} />
+          </div>
+        </div>
       </div>
     </div>
   );
