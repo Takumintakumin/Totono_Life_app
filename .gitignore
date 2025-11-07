@@ -28,3 +28,8 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Live2D SDK archives and sample assets
+CubismSdkForWeb-*/
+CubismSdkForNative-*/
+rice_pro_jp/
+
