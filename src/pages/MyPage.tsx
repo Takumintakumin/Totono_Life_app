@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AppData, UserProfile } from '../types';
 
 interface MyPageProps {
@@ -22,6 +22,30 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   const [morningTime, setMorningTime] = useState(data.settings.morningNotificationTime);
   const [eveningTime, setEveningTime] = useState(data.settings.eveningNotificationTime);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDisplayName(user.displayName || '');
+  }, [user.displayName]);
+
+  useEffect(() => {
+    setEmail(user.email || '');
+  }, [user.email]);
+
+  useEffect(() => {
+    setMorningRoutines(data.defaultMorningRoutines);
+  }, [data.defaultMorningRoutines]);
+
+  useEffect(() => {
+    setEveningRoutines(data.defaultEveningRoutines);
+  }, [data.defaultEveningRoutines]);
+
+  useEffect(() => {
+    setMorningTime(data.settings.morningNotificationTime);
+  }, [data.settings.morningNotificationTime]);
+
+  useEffect(() => {
+    setEveningTime(data.settings.eveningNotificationTime);
+  }, [data.settings.eveningNotificationTime]);
 
   const notificationPreview = useMemo(() => {
     const now = new Date();
@@ -98,19 +122,80 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   };
 
   const saveMorningRoutines = () => {
-    updateData((prev) => ({
-      ...prev,
-      defaultMorningRoutines: morningRoutines,
-    }));
+    const trimmed = morningRoutines.map((routine) => routine.trim()).filter((routine) => routine.length > 0);
+    setMorningRoutines(trimmed);
+    const today = new Date().toISOString().split('T')[0];
+
+    updateData((prev) => {
+      const updatedDayLogs = prev.dayLogs.map((log) => {
+        if (log.date !== today) {
+          return log;
+        }
+
+        const updatedRoutines = trimmed.map((text, index) => {
+          const existing = log.morning.routines.find((routine) => routine.text === text);
+          return existing
+            ? { ...existing, id: `morning-${index}`, text }
+            : { id: `morning-${index}`, text, completed: false };
+        });
+
+        const allCompleted = updatedRoutines.length > 0 && updatedRoutines.every((routine) => routine.completed);
+
+        return {
+          ...log,
+          morning: {
+            routines: updatedRoutines,
+            completed: allCompleted,
+          },
+        };
+      });
+
+      return {
+        ...prev,
+        defaultMorningRoutines: trimmed,
+        dayLogs: updatedDayLogs,
+      };
+    });
     setMessage('朝ルーティンを保存しました！');
     setTimeout(() => setMessage(null), 2000);
   };
 
   const saveEveningRoutines = () => {
-    updateData((prev) => ({
-      ...prev,
-      defaultEveningRoutines: eveningRoutines,
-    }));
+    const trimmed = eveningRoutines.map((routine) => routine.trim()).filter((routine) => routine.length > 0);
+    setEveningRoutines(trimmed);
+    const today = new Date().toISOString().split('T')[0];
+
+    updateData((prev) => {
+      const updatedDayLogs = prev.dayLogs.map((log) => {
+        if (log.date !== today) {
+          return log;
+        }
+
+        const updatedRoutines = trimmed.map((text, index) => {
+          const existing = log.evening.routines.find((routine) => routine.text === text);
+          return existing
+            ? { ...existing, id: `evening-${index}`, text }
+            : { id: `evening-${index}`, text, completed: false };
+        });
+
+        const allCompleted = updatedRoutines.length > 0 && updatedRoutines.every((routine) => routine.completed);
+
+        return {
+          ...log,
+          evening: {
+            routines: updatedRoutines,
+            completed: allCompleted,
+            mood: log.evening.mood,
+          },
+        };
+      });
+
+      return {
+        ...prev,
+        defaultEveningRoutines: trimmed,
+        dayLogs: updatedDayLogs,
+      };
+    });
     setMessage('夜ルーティンを保存しました！');
     setTimeout(() => setMessage(null), 2000);
   };
