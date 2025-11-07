@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import Live2DContainer from './components/Live2DContainer';
 import { loadData, saveData } from './utils/api';
 import { AppData, UserProfile } from './types';
 import MorningRoutine from './pages/MorningRoutine';
@@ -91,43 +92,43 @@ function AppShell({ data, updateData, onRegistered, onProfileUpdated }: AppShell
 
   return (
     <div className={`app ${isCharacterRoute ? 'app--full-character' : ''}`}>
-        <nav className="nav">
-          <Link to="/" className="nav-link">
-            <span className="nav-icon">🌅</span>
-            <span className="nav-text">朝</span>
-          </Link>
-          <Link to="/evening" className="nav-link">
-            <span className="nav-icon">🌙</span>
-            <span className="nav-text">夜</span>
-          </Link>
-          <Link to="/character" className="nav-link">
-            <span className="nav-icon">✨</span>
-            <span className="nav-text">キャラ</span>
-          </Link>
-          <Link to="/calendar" className="nav-link">
-            <span className="nav-icon">📅</span>
-            <span className="nav-text">カレンダー</span>
-          </Link>
-          <Link to="/mypage" className="nav-link">
-            <span className="nav-icon">👤</span>
-            <span className="nav-text">マイ</span>
-          </Link>
-        </nav>
+      <nav className="nav">
+        <Link to="/" className="nav-link">
+          <span className="nav-icon">🌅</span>
+          <span className="nav-text">朝</span>
+        </Link>
+        <Link to="/evening" className="nav-link">
+          <span className="nav-icon">🌙</span>
+          <span className="nav-text">夜</span>
+        </Link>
+        <Link to="/character" className="nav-link">
+          <span className="nav-icon">✨</span>
+          <span className="nav-text">キャラ</span>
+        </Link>
+        <Link to="/calendar" className="nav-link">
+          <span className="nav-icon">📅</span>
+          <span className="nav-text">カレンダー</span>
+        </Link>
+        <Link to="/mypage" className="nav-link">
+          <span className="nav-icon">👤</span>
+          <span className="nav-text">マイ</span>
+        </Link>
+      </nav>
 
       <main className={`main-content ${isCharacterRoute ? 'main-content--full' : ''}`}>
-          <Routes>
+        <Routes>
           <Route path="/" element={<MorningRoutine data={data} updateData={updateData} />} />
           <Route path="/evening" element={<EveningRoutine data={data} updateData={updateData} />} />
           <Route path="/character" element={<CharacterView character={data.character} user={data.user} />} />
           <Route path="/calendar" element={<CalendarView dayLogs={data.dayLogs} />} />
           <Route path="/register" element={<Register data={data} onRegistered={onRegistered} />} />
-            <Route
-              path="/mypage"
+          <Route
+            path="/mypage"
             element={<MyPage data={data} updateData={updateData} onProfileUpdated={onProfileUpdated} />}
-            />
-          </Routes>
-        </main>
-      </div>
+          />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
