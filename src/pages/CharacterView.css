@@ -1,0 +1,32 @@
+.character-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.character-display-card {
+  flex-shrink: 0;
+}
+
+.chat-card {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (min-width: 768px) {
+  .character-view-container {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .character-display-card {
+    width: 320px;
+    flex-shrink: 0;
+  }
+
+  .chat-card {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
