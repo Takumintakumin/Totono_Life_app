@@ -126,7 +126,7 @@ export default function Live2DCharacter({
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
 
         const availableWidth = width;
-        const availableHeight = height * (width <= 520 ? 0.32 : 0.38);
+        const availableHeight = height * (width <= 520 ? 0.28 : 0.34);
 
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
         const scale = clampValue(rawScale * (width <= 520 ? 0.13 : 0.15), 0.048, 0.1);
@@ -137,8 +137,8 @@ export default function Live2DCharacter({
 
         const posX = width / 2;
         const modelHeight = nativeHeight * scale;
-        const topMargin = height * (width <= 520 ? 0.07 : 0.055);
-        const bottomMargin = height * (width <= 520 ? 0.06 : 0.07);
+        const topMargin = height * (width <= 520 ? 0.08 : 0.065);
+        const bottomMargin = height * (width <= 520 ? 0.04 : 0.05);
         const minY = modelHeight / 2 + topMargin;
         const targetY = height - bottomMargin - modelHeight / 2;
         model.position?.set?.(posX, Math.max(minY, targetY));
