@@ -204,3 +204,4 @@ export default function Settings({ data, updateData }: SettingsProps) {
   );
 }
 
+
