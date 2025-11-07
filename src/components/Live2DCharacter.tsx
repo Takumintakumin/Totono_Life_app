@@ -124,25 +124,16 @@ export default function Live2DCharacter({
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
 
-        const layoutProfile = getLayoutProfile(width, height);
-        const horizontalMargin = Math.max(width * layoutProfile.horizontalRatio, layoutProfile.minHorizontalMargin);
-        const verticalMargin = Math.max(height * layoutProfile.verticalRatio, layoutProfile.minVerticalMargin);
-
-        const availableWidth = Math.max(width - horizontalMargin * 2, 1);
-        const availableHeight = Math.max(height - verticalMargin * 2, 1);
-        const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const scale = Math.min(layoutProfile.maxScale, rawScale);
+        const rawScale = Math.min(width / nativeWidth, height / nativeHeight);
+        const scale = rawScale * 0.9;
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
         }
 
-        const halfModelHeight = (nativeHeight * scale) / 2;
         const posX = width / 2;
-        let posY = height - verticalMargin - halfModelHeight;
-        posY -= halfModelHeight * layoutProfile.verticalShift;
-        const minimumY = halfModelHeight + verticalMargin * 0.35;
-        model.position?.set?.(posX, Math.max(minimumY, posY));
+        const bottomOffset = height - (nativeHeight * scale) / 2;
+        model.position?.set?.(posX, bottomOffset);
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
@@ -443,54 +434,6 @@ function getPointerPosition(event: PointerInteractionEvent) {
     x: global?.x ?? 0,
     y: global?.y ?? 0,
   };
-}
-
-function getLayoutProfile(width: number, height: number) {
-  if (width <= 480) {
-    const shift = height <= 600 ? 0.38 : 0.32;
-    return {
-      horizontalRatio: 0.055,
-      verticalRatio: 0.11,
-      minHorizontalMargin: 32,
-      minVerticalMargin: 52,
-      maxScale: 0.75,
-      verticalShift: shift,
-    } as const;
-  }
-
-  if (width <= 680) {
-    const shift = height <= 640 ? 0.24 : 0.2;
-    return {
-      horizontalRatio: 0.085,
-      verticalRatio: 0.14,
-      minHorizontalMargin: 48,
-      minVerticalMargin: 68,
-      maxScale: 0.68,
-      verticalShift: shift,
-    } as const;
-  }
-
-  if (width <= 960) {
-    const shift = height <= 720 ? 0.18 : 0.14;
-    return {
-      horizontalRatio: 0.12,
-      verticalRatio: 0.18,
-      minHorizontalMargin: 72,
-      minVerticalMargin: 88,
-      maxScale: 0.62,
-      verticalShift: shift,
-    } as const;
-  }
-
-  const shift = height <= 820 ? 0.12 : 0.1;
-  return {
-    horizontalRatio: 0.18,
-    verticalRatio: 0.22,
-    minHorizontalMargin: 96,
-    minVerticalMargin: 112,
-    maxScale: 0.58,
-    verticalShift: shift,
-  } as const;
 }
 
 function getRandomExpression(): string {
