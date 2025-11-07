@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDbPool } from './_lib/db';
+import { getDbPool } from './lib/db';
 import { handleCors, setCorsHeaders } from './utils/cors';
 
 const DEFAULT_AVATAR = {
