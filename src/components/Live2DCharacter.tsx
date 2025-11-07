@@ -132,7 +132,8 @@ export default function Live2DCharacter({
         const availableHeight = Math.max(height - verticalMargin * 2, 1);
 
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const scale = Math.min(layoutProfile.maxScale, rawScale);
+        const baselineScale = rawScale * layoutProfile.scaleFactor;
+        const scale = clampValue(baselineScale, layoutProfile.minScale, layoutProfile.maxScale);
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
@@ -445,39 +446,49 @@ function getPointerPosition(event: PointerInteractionEvent) {
   };
 }
 
+function clampValue(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function getLayoutProfile(width: number, height: number) {
   if (width <= 420) {
-    const shift = height <= 640 ? 0.35 : 0.28;
+    const shift = height <= 640 ? 0.25 : 0.2;
     return {
       horizontalRatio: 0.08,
       verticalRatio: 0.15,
       minHorizontalMargin: 28,
       minVerticalMargin: 44,
-      maxScale: 0.07,
+      scaleFactor: 0.2,
+      minScale: 0.08,
+      maxScale: 0.22,
       verticalShift: shift,
     } as const;
   }
 
   if (width <= 640) {
-    const shift = height <= 720 ? 0.22 : 0.18;
+    const shift = height <= 720 ? 0.18 : 0.15;
     return {
       horizontalRatio: 0.11,
       verticalRatio: 0.18,
       minHorizontalMargin: 40,
       minVerticalMargin: 60,
-      maxScale: 0.065,
+      scaleFactor: 0.22,
+      minScale: 0.09,
+      maxScale: 0.24,
       verticalShift: shift,
     } as const;
   }
 
   if (width <= 960) {
-    const shift = height <= 820 ? 0.16 : 0.12;
+    const shift = height <= 820 ? 0.14 : 0.11;
     return {
       horizontalRatio: 0.15,
       verticalRatio: 0.2,
       minHorizontalMargin: 68,
       minVerticalMargin: 88,
-      maxScale: 0.06,
+      scaleFactor: 0.25,
+      minScale: 0.1,
+      maxScale: 0.28,
       verticalShift: shift,
     } as const;
   }
@@ -488,7 +499,9 @@ function getLayoutProfile(width: number, height: number) {
     verticalRatio: 0.24,
     minHorizontalMargin: 92,
     minVerticalMargin: 112,
-    maxScale: 0.055,
+    scaleFactor: 0.27,
+    minScale: 0.12,
+    maxScale: 0.3,
     verticalShift: shift,
   } as const;
 }
