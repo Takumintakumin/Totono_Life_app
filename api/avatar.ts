@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDbPool } from './lib/db';
+import { getDbPool } from './lib/db.js';
 import { handleCors, setCorsHeaders } from './utils/cors';
 import { getUserId } from './utils/user';
 
