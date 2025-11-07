@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { loadData, saveData } from './utils/api';
 import { AppData, UserProfile } from './types';
 import RoutineDashboard from './pages/RoutineDashboard';
 import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
 import MyPage from './pages/MyPage';
+import Register from './pages/Register';
 import './App.css';
 
 function App() {
@@ -47,6 +48,10 @@ function App() {
     });
   };
 
+  const handleRegistered = (nextData: AppData) => {
+    setData(nextData);
+  };
+
   if (loading || !data) {
     return (
       <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -64,6 +69,7 @@ function App() {
         data={data}
         updateData={updateData}
         onProfileUpdated={handleProfileUpdated}
+        onRegistered={handleRegistered}
       />
     </Router>
   );
@@ -75,19 +81,29 @@ interface AppShellProps {
   data: AppData;
   updateData: (updater: (prev: AppData) => AppData) => void;
   onProfileUpdated: (user: UserProfile) => void;
+  onRegistered: (data: AppData) => void;
 }
 
-function AppShell({ data, updateData, onProfileUpdated }: AppShellProps) {
+function AppShell({ data, updateData, onProfileUpdated, onRegistered }: AppShellProps) {
   const location = useLocation();
   const isCharacterRoute = location.pathname.startsWith('/character');
+  const isRegistered = data.user.isRegistered;
+  const mainClasses = ['main-content'];
+  if (isCharacterRoute) {
+    mainClasses.push('main-content--full');
+  }
+  if (!isRegistered) {
+    mainClasses.push('main-content--standalone');
+  }
 
   return (
     <div className={`app ${isCharacterRoute ? 'app--full-character' : ''}`}>
+      {isRegistered && (
         <nav className="nav">
-        <Link to="/routine" className="nav-link">
-          <span className="nav-icon">🕒</span>
-          <span className="nav-text">ルーティン</span>
-        </Link>
+          <Link to="/routine" className="nav-link">
+            <span className="nav-icon">🕒</span>
+            <span className="nav-text">ルーティン</span>
+          </Link>
           <Link to="/character" className="nav-link">
             <span className="nav-icon">✨</span>
             <span className="nav-text">キャラ</span>
@@ -101,21 +117,30 @@ function AppShell({ data, updateData, onProfileUpdated }: AppShellProps) {
             <span className="nav-text">マイ</span>
           </Link>
         </nav>
+      )}
 
-      <main className={`main-content ${isCharacterRoute ? 'main-content--full' : ''}`}>
-          <Routes>
-          <Route path="/" element={<RoutineDashboard data={data} updateData={updateData} initialSection="morning" />} />
-          <Route path="/evening" element={<RoutineDashboard data={data} updateData={updateData} initialSection="evening" />} />
-          <Route path="/routine" element={<RoutineDashboard data={data} updateData={updateData} initialSection="all" />} />
-          <Route path="/character" element={<CharacterView character={data.character} user={data.user} />} />
-          <Route path="/calendar" element={<CalendarView dayLogs={data.dayLogs} />} />
-            <Route
-              path="/mypage"
-            element={<MyPage data={data} updateData={updateData} onProfileUpdated={onProfileUpdated} />}
-            />
-          </Routes>
-        </main>
-      </div>
+      <main className={mainClasses.join(' ')}>
+        <Routes>
+          {!isRegistered && (
+            <>
+              <Route path="/register" element={<Register data={data} onRegistered={onRegistered} />} />
+              <Route path="*" element={<Navigate to="/register" replace />} />
+            </>
+          )}
+          {isRegistered && (
+            <>
+              <Route path="/" element={<RoutineDashboard data={data} updateData={updateData} initialSection="morning" />} />
+              <Route path="/evening" element={<RoutineDashboard data={data} updateData={updateData} initialSection="evening" />} />
+              <Route path="/routine" element={<RoutineDashboard data={data} updateData={updateData} initialSection="all" />} />
+              <Route path="/character" element={<CharacterView character={data.character} user={data.user} />} />
+              <Route path="/calendar" element={<CalendarView dayLogs={data.dayLogs} />} />
+              <Route path="/mypage" element={<MyPage data={data} updateData={updateData} onProfileUpdated={onProfileUpdated} />} />
+              <Route path="/register" element={<Navigate to="/" replace />} />
+            </>
+          )}
+        </Routes>
+      </main>
+    </div>
   );
 }
 

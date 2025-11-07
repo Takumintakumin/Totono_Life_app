@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { AppData, UserProfile } from '../types';
+import AvatarBuilder from '../components/AvatarBuilder';
+import { AppData, AvatarConfig, UserProfile } from '../types';
+import { peekUserId, updateUserProfile } from '../utils/api';
 
 interface MyPageProps {
   data: AppData;
@@ -12,9 +14,11 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
 
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [email, setEmail] = useState(user.email || '');
+  const [avatar, setAvatar] = useState<AvatarConfig>(user.avatar);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const userCode = useMemo(() => peekUserId(), [data.user.id]);
 
   // 設定関連のstate
   const [morningRoutines, setMorningRoutines] = useState(data.defaultMorningRoutines);
@@ -30,6 +34,10 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   useEffect(() => {
     setEmail(user.email || '');
   }, [user.email]);
+
+  useEffect(() => {
+    setAvatar(user.avatar);
+  }, [user.avatar]);
 
   useEffect(() => {
     setMorningRoutines(data.defaultMorningRoutines);
@@ -101,11 +109,11 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
     try {
       setSaving(true);
       setError(null);
-      const updatedUser: UserProfile = {
-        ...user,
+      const updatedUser = await updateUserProfile({
         displayName: displayName.trim(),
         email: email.trim(),
-      };
+        avatar,
+      });
       updateData((prev) => ({
         ...prev,
         user: updatedUser,
@@ -273,6 +281,13 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
           プロフィール情報を更新しましょう。
         </p>
 
+        {userCode && (
+          <div className="bonus-message" style={{ marginBottom: '1.25rem', background: '#f0f8ec', color: '#1f5728' }}>
+            あなたのユーザーコード: <strong>{userCode}</strong><br />
+            端末を変更する際はこのコードで復元できます。
+          </div>
+        )}
+
         <form onSubmit={handleProfileSubmit} className="form-stack">
           <label className="input-group">
             <span className="input-label">表示名</span>
@@ -294,6 +309,13 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
               placeholder="example@totono.life"
             />
           </label>
+          <section style={{ marginTop: '2rem' }}>
+            <h2 className="card-title" style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>
+              🎨 アバター
+            </h2>
+            <AvatarBuilder value={avatar} onChange={setAvatar} />
+          </section>
+
           {message && (
             <div className="bonus-message" style={{ marginTop: '1rem' }}>
               {message}

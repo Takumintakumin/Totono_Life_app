@@ -7,13 +7,14 @@ import {
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const USER_ID_KEY = 'user-id';
 
 // 簡易的なユーザーID（実際のアプリでは認証システムから取得）
 function getUserId(): string {
-  let userId = localStorage.getItem('user-id');
+  let userId = peekUserId();
   if (!userId) {
     userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('user-id', userId);
+    setUserId(userId);
   }
   return userId;
 }
@@ -237,5 +238,49 @@ export async function updateUserProfile(payload: UpdateProfilePayload): Promise<
   const appData = await loadData();
   saveDataToLocalStorage(appData);
   return data.user as UserProfile;
+}
+
+export function peekUserId(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const stored = window.localStorage.getItem(USER_ID_KEY);
+  if (stored) return stored;
+  const cookieMatch = typeof document !== 'undefined'
+    ? document.cookie.split('; ').find((entry) => entry.startsWith(`${USER_ID_KEY}=`))
+    : undefined;
+  if (cookieMatch) {
+    const [, value] = cookieMatch.split('=');
+    if (value) {
+      window.localStorage.setItem(USER_ID_KEY, value);
+      return value;
+    }
+  }
+  return null;
+}
+
+export function setUserId(userId: string): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(USER_ID_KEY, userId);
+  if (typeof document !== 'undefined') {
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    document.cookie = `${USER_ID_KEY}=${userId}; path=/; expires=${expires.toUTCString()}`;
+  }
+}
+
+export function clearUserId(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(USER_ID_KEY);
+  if (typeof document !== 'undefined') {
+    document.cookie = `${USER_ID_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
+}
+
+export async function switchUser(userId: string): Promise<AppData> {
+  setUserId(userId);
+  const data = await loadData();
+  saveDataToLocalStorage(data);
+  return data;
 }
 
