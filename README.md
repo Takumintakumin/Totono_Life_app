@@ -41,3 +41,74 @@ npm run build
 
 データはブラウザのLocalStorageに保存されます。
 
+## GitHubへのプッシュ手順
+
+### 1. GitHubでリポジトリを作成
+
+1. [GitHub](https://github.com)にログイン
+2. 右上の「+」→「New repository」をクリック
+3. リポジトリ名を入力（例: `Totono_Life_app`）
+4. 「Public」または「Private」を選択
+5. 「Initialize this repository with a README」は**チェックしない**（既にREADMEがあるため）
+6. 「Create repository」をクリック
+
+### 2. ローカルリポジトリをGitHubにプッシュ
+
+```bash
+# リモートリポジトリを追加（YOUR_USERNAMEとYOUR_REPO_NAMEを置き換えてください）
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+
+# メインブランチを設定
+git branch -M main
+
+# GitHubにプッシュ
+git push -u origin main
+```
+
+### 3. GitHub Pagesでデプロイ（オプション）
+
+GitHub Pagesでアプリを公開する場合：
+
+1. GitHubリポジトリの「Settings」→「Pages」に移動
+2. Source で「GitHub Actions」を選択
+3. 以下のワークフローファイル（`.github/workflows/deploy.yml`）を作成：
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npm run build
+      - uses: actions/configure-pages@v2
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: dist
+      - uses: actions/deploy-pages@v1
+```
+
+4. ファイルをコミット・プッシュ：
+
+```bash
+git add .github/workflows/deploy.yml
+git commit -m "Add GitHub Pages deployment workflow"
+git push
+```
+
+5. 数分後、`https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/` でアクセス可能になります
+
