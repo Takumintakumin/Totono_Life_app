@@ -50,23 +50,10 @@ export default function Live2DCharacter({
           return;
         }
 
-        const { Application, Ticker: PixiTicker } = pixiModule as unknown as {
+        const { Application } = pixiModule as unknown as {
           Application: typeof import('pixi.js-legacy').Application;
-          Ticker?: typeof import('pixi.js-legacy').Ticker;
         };
         const { Live2DModel } = live2dModule;
-
-        const tickerClass = PixiTicker ?? (pixiModule as unknown as { Ticker?: typeof import('pixi.js-legacy').Ticker }).Ticker;
-        if (tickerClass) {
-          if (!(tickerClass as unknown as { shared?: unknown }).shared) {
-            const instance = new tickerClass();
-            (tickerClass as unknown as { shared?: unknown }).shared = instance;
-            if (!(instance as { started?: boolean }).started) {
-              (instance as { start?: () => void }).start?.();
-            }
-          }
-          (Live2DModel as unknown as { registerTicker?: (ticker: typeof tickerClass) => void }).registerTicker?.(tickerClass);
-        }
 
         const app = new Application({
           width,
@@ -85,7 +72,9 @@ export default function Live2DCharacter({
         containerRef.current.appendChild(canvas);
         appRef.current = app;
 
-        (Live2DModel as unknown as { registerTicker?: (ticker: unknown) => void }).registerTicker?.(app.ticker as unknown);
+        (Live2DModel as unknown as { registerTicker?: (ticker: { shared: typeof app.ticker }) => void }).registerTicker?.({
+          shared: app.ticker,
+        });
 
         const model = (await Live2DModel.from(modelPath, {
           autoUpdate: true,
