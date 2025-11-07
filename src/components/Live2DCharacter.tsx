@@ -6,12 +6,13 @@ import './Live2DCharacter.css';
 const DEFAULT_MODEL_PATH = '/live2d/models/mao/mao_pro.model3.json';
 const DEFAULT_CORE_PATH = '/live2d/core/live2dcubismcore.min.js';
 const EXPRESSION_IDS = ['exp_01', 'exp_02', 'exp_03', 'exp_04', 'exp_05', 'exp_06', 'exp_07', 'exp_08'];
-const EXTRA_MOTION_GROUP = '';
-const EXTRA_MOTION_COUNT = 6;
+const TAP_MOTION_GROUP = '';
+const TAP_MOTIONS = [0, 3, 4];
+const PET_MOTIONS = [1, 5];
+const AMBIENT_MOTIONS = [0, 2, 3, 4, 5];
+const IDLE_VARIANTS = ['Idle', 'Idle_A', 'Idle_B'];
 const MIN_AMBIENT_DELAY = 7000;
 const MAX_AMBIENT_DELAY = 13000;
-const TAP_MOTION_INDEX = 0;
-const PET_MOTION_INDEX = 1;
 const PET_DISTANCE_THRESHOLD = 65;
 const INTERACTION_COOLDOWN = 4500;
 
@@ -160,8 +161,20 @@ export default function Live2DCharacter({
         app.stage.addChild(model as unknown as never);
         modelRef.current = model;
 
+        let elapsed = 0;
         const tickerCallback = (delta: number) => {
-          model.update?.(delta);
+          const currentModel = modelRef.current;
+          if (!currentModel) return;
+          elapsed += delta;
+
+          // Update model with normalized delta to keep motion smooth across frame rates
+          currentModel.update?.(delta);
+
+          // Exchange idle motion occasionally for variety
+          if (elapsed > 60 * 20) {
+            elapsed = 0;
+            rotateIdleVariant();
+          }
         };
         tickerCallbackRef.current = tickerCallback;
         app.ticker.add(tickerCallback);
@@ -203,6 +216,21 @@ export default function Live2DCharacter({
             currentModel.motion?.(idleMotionGroup, 0);
           } catch (error) {
             console.warn('[Live2D] Idle motion failed:', error);
+          }
+        }
+
+        function rotateIdleVariant() {
+          const currentModel = modelRef.current;
+          if (!currentModel) return;
+          const available = IDLE_VARIANTS.filter(Boolean);
+          if (available.length <= 1) return;
+          const currentIndex = available.findIndex((group) => group === idleMotionGroup);
+          const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % available.length : 0;
+          try {
+            currentModel.internalModel?.motionManager?.stopAllMotions();
+            currentModel.motion?.(available[nextIndex], 0);
+          } catch (error) {
+            console.warn('[Live2D] Idle rotation failed:', error);
           }
         }
 
@@ -262,7 +290,8 @@ export default function Live2DCharacter({
 
           const handlePointerTap = () => {
             pointerState.hasDragged = false;
-            const triggered = triggerMotion(EXTRA_MOTION_GROUP, TAP_MOTION_INDEX, { force: true });
+            const motionIndex = TAP_MOTIONS[Math.floor(Math.random() * TAP_MOTIONS.length)] ?? 0;
+            const triggered = triggerMotion(TAP_MOTION_GROUP, motionIndex, { force: true });
             if (!triggered) {
               triggerExpression(getRandomExpression());
             }
@@ -289,7 +318,8 @@ export default function Live2DCharacter({
             pointerState.lastY = position.y;
 
             if (!pointerState.hasDragged && Math.hypot(dx, dy) >= PET_DISTANCE_THRESHOLD) {
-              pointerState.hasDragged = triggerMotion(EXTRA_MOTION_GROUP, PET_MOTION_INDEX, { force: true });
+              const motionIndex = PET_MOTIONS[Math.floor(Math.random() * PET_MOTIONS.length)] ?? 0;
+              pointerState.hasDragged = triggerMotion(TAP_MOTION_GROUP, motionIndex, { force: true });
               if (pointerState.hasDragged) {
                 scheduleAmbientMotion(INTERACTION_COOLDOWN + Math.random() * 1600);
               }
@@ -342,11 +372,11 @@ export default function Live2DCharacter({
               return;
             }
 
-            if (Math.random() < 0.45) {
+            if (Math.random() < 0.4) {
               triggerExpression(getRandomExpression());
             } else {
-              const motionIndex = Math.floor(Math.random() * EXTRA_MOTION_COUNT);
-              triggerMotion(EXTRA_MOTION_GROUP, motionIndex, { force: true });
+              const motionIndex = AMBIENT_MOTIONS[Math.floor(Math.random() * AMBIENT_MOTIONS.length)] ?? 0;
+              triggerMotion(TAP_MOTION_GROUP, motionIndex, { force: true });
             }
 
             scheduleAmbientMotion();
