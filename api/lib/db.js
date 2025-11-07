@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
 
-let pool: Pool | null = null;
+let pool = null;
 
-export function getDbPool(): Pool {
+export function getDbPool() {
   if (!pool) {
     if (process.env.DATABASE_URL) {
       pool = new Pool({
@@ -28,7 +28,7 @@ export function getDbPool(): Pool {
   return pool;
 }
 
-export async function initDatabase(): Promise<void> {
+export async function initDatabase() {
   const pool = getDbPool();
 
   await pool.query(`
@@ -152,7 +152,7 @@ export async function initDatabase(): Promise<void> {
   `);
 }
 
-function sanitizeConnectionString(raw: string): string {
+function sanitizeConnectionString(raw) {
   try {
     const url = new URL(raw);
     if (url.searchParams.has('channel_binding')) {
@@ -171,4 +171,3 @@ function sanitizeConnectionString(raw: string): string {
     });
   }
 }
-
