@@ -99,17 +99,17 @@ export default function Live2DCharacter({
 
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
-        const horizontalMargin = Math.max(width * 0.1, 56);
-        const verticalMargin = Math.max(height * 0.14, 64);
+        const horizontalMargin = Math.max(width * 0.15, 72);
+        const verticalMargin = Math.max(height * 0.18, 84);
         const availableWidth = Math.max(width - horizontalMargin * 2, 1);
         const availableHeight = Math.max(height - verticalMargin * 2, 1);
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const MIN_SCALE = 0.35;
-        const MAX_SCALE = 0.95;
+        const MIN_SCALE = 0.25;
+        const MAX_SCALE = 0.8;
 
         const scaledRaw = Math.min(rawScale, MAX_SCALE);
         const growthRange = Math.max(scaledRaw - MIN_SCALE, 0);
-        const responsiveFactor = Math.min(Math.max((Math.min(width, height) - 480) / 900, 0), 1);
+        const responsiveFactor = Math.min(Math.max((Math.min(width, height) - 600) / 960, 0), 1);
         const scale = Math.min(MAX_SCALE, MIN_SCALE + growthRange * responsiveFactor);
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
