@@ -103,8 +103,9 @@ export default function Live2DCharacter({
         return;
       }
 
-      const interactiveModel = model as unknown as { eventMode?: string; cursor?: string };
-      interactiveModel.eventMode = 'dynamic';
+      const interactiveModel = model as unknown as { interactive?: boolean; buttonMode?: boolean; cursor?: string };
+      interactiveModel.interactive = true;
+      interactiveModel.buttonMode = true;
       interactiveModel.cursor = 'pointer';
       model.anchor.set(0.5, 0.5);
       model.position.set(width / 2, height * 0.9);
