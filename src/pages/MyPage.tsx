@@ -151,7 +151,7 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       });
 
       return {
-        ...prev,
+      ...prev,
         defaultMorningRoutines: trimmed,
         dayLogs: updatedDayLogs,
       };
@@ -191,7 +191,7 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       });
 
       return {
-        ...prev,
+      ...prev,
         defaultEveningRoutines: trimmed,
         dayLogs: updatedDayLogs,
       };

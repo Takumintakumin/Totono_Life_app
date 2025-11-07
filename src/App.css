@@ -195,6 +195,77 @@ body {
   animation: bounce 0.5s;
 }
 
+.routine-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.routine-filter {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.routine-filter-button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.12);
+  color: #53608a;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.routine-filter-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+}
+
+.routine-filter-button:hover {
+  transform: translateY(-1px);
+}
+
+.routine-progress {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f7f8ff;
+  border-radius: 12px;
+}
+
+.routine-progress-label {
+  display: inline-block;
+  font-weight: 600;
+  color: #53608a;
+  margin-right: 0.4rem;
+}
+
+.routine-progress-value {
+  color: #2f3b59;
+  font-weight: 600;
+}
+
+.routine-section {
+  padding-top: 1.5rem;
+}
+
+.routine-section-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.routine-section-caption {
+  display: block;
+  color: rgba(47, 59, 89, 0.65);
+  font-size: 0.85rem;
+}
+
 @keyframes bounce {
   0%, 100% {
     transform: translateY(0);

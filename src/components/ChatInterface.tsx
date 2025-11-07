@@ -115,12 +115,12 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       return cookieState.messages;
     }
     return [
-      {
+    {
         id: 'initial',
         text: buildInitialGreeting(userName, initialDescriptor),
-        sender: 'character',
-        timestamp: new Date(),
-      },
+      sender: 'character',
+      timestamp: new Date(),
+    },
     ];
   });
   const [affinity, setAffinity] = useState(cookieState.affinity ?? baseAffinity);

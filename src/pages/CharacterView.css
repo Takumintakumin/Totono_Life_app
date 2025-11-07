@@ -120,9 +120,9 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+    align-items: flex-start;
   padding: 0 0.3rem;
-}
+  }
 
 .character-canvas > .live2d-character {
   height: 100%;

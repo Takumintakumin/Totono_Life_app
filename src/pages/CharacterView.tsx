@@ -61,7 +61,7 @@ export default function CharacterView({ character: _character, user: _user }: Ch
           <div className="character-overlay-header">
             <span className="character-overlay-title">{displayName}のステータス</span>
             <span className="character-overlay-caption">キャラと話して親密度を高めよう</span>
-          </div>
+        </div>
 
           <div className="character-overlay-tabs">
             <button
@@ -91,8 +91,8 @@ export default function CharacterView({ character: _character, user: _user }: Ch
                   <li><span>経験値</span><strong>{_character.experience} / {_character.experienceToNext}</strong></li>
                   <li><span>進化段階</span><strong>{_character.evolutionStage}</strong></li>
                 </ul>
-              </div>
-            )}
+            </div>
+          )}
           </div>
         </div>
       </div>
