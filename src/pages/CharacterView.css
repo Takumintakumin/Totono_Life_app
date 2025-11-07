@@ -11,9 +11,9 @@
 }
 
 .character-overlay-wrapper {
-  width: min(100%, 560px);
+  width: min(100%, 600px);
   pointer-events: auto;
-  padding: 0 0.6rem;
+  padding: 0 0.75rem;
 }
 
 .character-overlay-card {
@@ -22,7 +22,7 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  padding: 0.65rem 0.85rem;
+  padding: 0.8rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -74,7 +74,7 @@
 
 
 .character-overlay-body {
-  max-height: 160px;
+  max-height: 190px;
   overflow: auto;
 }
 
@@ -138,12 +138,12 @@
   }
 
   .character-overlay-wrapper {
-    padding: 0 0.28rem;
+    padding: 0 0.35rem;
     width: 100%;
   }
 
   .character-overlay-card {
-    padding: 0.55rem 0.65rem;
+    padding: 0.7rem 0.85rem;
   }
 
   .character-canvas {
