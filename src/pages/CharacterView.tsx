@@ -1,5 +1,6 @@
 import { Character, UserProfile } from '../types';
 import SeedAvatar from '../components/SeedAvatar';
+import Live2DCharacter from '../components/Live2DCharacter';
 import ChatInterface from '../components/ChatInterface';
 import './CharacterView.css';
 
@@ -12,7 +13,12 @@ export default function CharacterView({ character, user }: CharacterViewProps) {
   return (
     <div className="character-view-container">
       <div className="card character-display-card">
-        <SeedAvatar character={character} avatar={user.avatar} variant="inline" showBadge />
+        <div className="live2d-wrapper">
+          <Live2DCharacter width={360} height={420} />
+        </div>
+        <div className="seed-avatar-preview">
+          <SeedAvatar character={character} avatar={user.avatar} variant="inline" showBadge />
+        </div>
         <div style={{ textAlign: 'center', color: '#4d6a4d', marginBottom: '1rem' }}>
           <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{user.displayName || 'ゲスト'}</div>
           <div style={{ fontSize: '0.85rem', color: '#5d7b5d' }}>撫でてみてね！</div>
