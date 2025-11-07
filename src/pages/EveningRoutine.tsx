@@ -29,6 +29,7 @@ export default function EveningRoutine({ data, updateData }: EveningRoutineProps
       );
 
       const allCompleted = updatedRoutines.every((r: RoutineItem) => r.completed);
+      const wasAlreadyCompleted = todayLog.evening.completed;
 
       const newLog: DayLog = {
         ...todayLog,
@@ -55,6 +56,12 @@ export default function EveningRoutine({ data, updateData }: EveningRoutineProps
       );
       if (!updatedLogs.find((l) => l.date === today)) {
         updatedLogs.push(newLog);
+      }
+
+      if (allCompleted && !wasAlreadyCompleted) {
+        window.charAction?.('night');
+      } else if (!allCompleted && wasAlreadyCompleted) {
+        window.charAction?.('miss');
       }
 
       return {

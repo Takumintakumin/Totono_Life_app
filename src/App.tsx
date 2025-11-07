@@ -7,7 +7,7 @@ import EveningRoutine from './pages/EveningRoutine';
 import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
 import Settings from './pages/Settings';
-import FloatingCharacter from './components/FloatingCharacter';
+import SeedAvatar from './components/SeedAvatar';
 import './App.css';
 
 function App() {
@@ -110,8 +110,8 @@ function App() {
           </Routes>
         </main>
 
-        {/* 全画面共通の浮遊キャラクター */}
-        <FloatingCharacter character={data.character} />
+        {/* 全画面共通のアバターキャラクター */}
+        <SeedAvatar character={data.character} />
       </div>
     </Router>
   );

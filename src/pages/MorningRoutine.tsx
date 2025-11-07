@@ -51,6 +51,9 @@ export default function MorningRoutine({ data, updateData }: MorningRoutineProps
       if (allCompleted && !wasAlreadyCompleted) {
         setShowBonus(true);
         setTimeout(() => setShowBonus(false), 3000);
+        window.charAction?.('morning');
+      } else if (!allCompleted && wasAlreadyCompleted) {
+        window.charAction?.('miss');
       }
 
       const updatedCharacter = addExperience(prev.character, exp);
