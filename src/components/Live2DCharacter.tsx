@@ -124,16 +124,25 @@ export default function Live2DCharacter({
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
 
-        const rawScale = Math.min(width / nativeWidth, height / nativeHeight);
-        const scale = rawScale * 0.9;
+        const layoutProfile = getLayoutProfile(width, height);
+        const horizontalMargin = Math.max(width * layoutProfile.horizontalRatio, layoutProfile.minHorizontalMargin);
+        const verticalMargin = Math.max(height * layoutProfile.verticalRatio, layoutProfile.minVerticalMargin);
+
+        const availableWidth = Math.max(width - horizontalMargin * 2, 1);
+        const availableHeight = Math.max(height - verticalMargin * 2, 1);
+
+        const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
+        const scale = Math.min(layoutProfile.maxScale, rawScale);
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
           (model.scale as { set: (x: number, y?: number) => void }).set(scale);
         }
 
         const posX = width / 2;
-        const bottomOffset = height - (nativeHeight * scale) / 2;
-        model.position?.set?.(posX, bottomOffset);
+        let posY = height - verticalMargin - (nativeHeight * scale) / 2;
+        posY -= nativeHeight * scale * layoutProfile.verticalShift;
+        const minY = (nativeHeight * scale) / 2 + verticalMargin * 0.35;
+        model.position?.set?.(posX, Math.max(minY, posY));
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
@@ -434,6 +443,54 @@ function getPointerPosition(event: PointerInteractionEvent) {
     x: global?.x ?? 0,
     y: global?.y ?? 0,
   };
+}
+
+function getLayoutProfile(width: number, height: number) {
+  if (width <= 420) {
+    const shift = height <= 640 ? 0.35 : 0.28;
+    return {
+      horizontalRatio: 0.08,
+      verticalRatio: 0.15,
+      minHorizontalMargin: 28,
+      minVerticalMargin: 44,
+      maxScale: 0.62,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 640) {
+    const shift = height <= 720 ? 0.22 : 0.18;
+    return {
+      horizontalRatio: 0.11,
+      verticalRatio: 0.18,
+      minHorizontalMargin: 40,
+      minVerticalMargin: 60,
+      maxScale: 0.58,
+      verticalShift: shift,
+    } as const;
+  }
+
+  if (width <= 960) {
+    const shift = height <= 820 ? 0.16 : 0.12;
+    return {
+      horizontalRatio: 0.15,
+      verticalRatio: 0.2,
+      minHorizontalMargin: 68,
+      minVerticalMargin: 88,
+      maxScale: 0.54,
+      verticalShift: shift,
+    } as const;
+  }
+
+  const shift = height <= 900 ? 0.1 : 0.08;
+  return {
+    horizontalRatio: 0.2,
+    verticalRatio: 0.24,
+    minHorizontalMargin: 92,
+    minVerticalMargin: 112,
+    maxScale: 0.52,
+    verticalShift: shift,
+  } as const;
 }
 
 function getRandomExpression(): string {
