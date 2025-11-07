@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Application as PixiApplicationType, DisplayObject, Ticker } from 'pixi.js-legacy';
+import type { Application as PixiApplicationType, DisplayObject } from 'pixi.js-legacy';
+import { Ticker } from '@pixi/ticker';
 import type { Live2DModel as Live2DModelType } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
@@ -50,15 +51,15 @@ export default function Live2DCharacter({
           return;
         }
 
-        const { Application, Ticker } = pixiModule;
+        const { Application } = pixiModule;
         const { Live2DModel } = live2dModule;
 
-        const sharedTicker: Ticker = Ticker.shared;
+        const sharedTicker = Ticker.shared;
         if (!sharedTicker.started) {
           sharedTicker.start();
         }
 
-        (Live2DModel as unknown as { registerTicker?: (ticker: Ticker) => void }).registerTicker?.(sharedTicker);
+        (Live2DModel as unknown as { registerTicker?: (ticker: typeof sharedTicker) => void }).registerTicker?.(sharedTicker);
 
         const app = new Application({
           width,
