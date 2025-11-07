@@ -187,7 +187,7 @@ export default function Settings({ data, updateData }: SettingsProps) {
               className={`theme-button ${data.character.theme === 'animal' ? 'selected' : ''}`}
               onClick={() => changeTheme('animal')}
             >
-              🐣
+              🐾
               <span className="theme-label">動物系</span>
             </button>
             <button

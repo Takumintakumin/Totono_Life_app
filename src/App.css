@@ -19,6 +19,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: 80px; /* ナビゲーションバーの高さ分の余白 */
 }
 
 .nav {
@@ -26,11 +27,14 @@ body {
   justify-content: space-around;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
+  padding: 0.75rem 0.5rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .nav-link {
@@ -46,7 +50,7 @@ body {
 }
 
 .nav-link:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   color: #764ba2;
   background: rgba(102, 126, 234, 0.1);
 }
@@ -437,6 +441,14 @@ body {
 
   .nav-icon {
     font-size: 1.25rem;
+  }
+
+  .app {
+    padding-bottom: 70px; /* モバイル用の余白調整 */
+  }
+
+  .nav {
+    padding: 0.5rem 0.25rem;
   }
 }
 

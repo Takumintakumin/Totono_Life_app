@@ -58,7 +58,7 @@ export const getCharacterAppearance = (character: Character): string => {
     state = daysSinceActive === 1 ? 'sleepy' : 'cloudy';
   }
 
-  // テーマと進化段階に基づいて見た目を決定
+  // テーマと進化段階に基づいて見た目を決定（可愛い動物メイン）
   const appearances: Record<string, Record<number, Record<string, string>>> = {
     plant: {
       0: { normal: '🌱', sleepy: '😴', cloudy: '☁️' },
@@ -67,10 +67,10 @@ export const getCharacterAppearance = (character: Character): string => {
       3: { normal: '🌸', sleepy: '😴', cloudy: '☁️' },
     },
     animal: {
-      0: { normal: '🐣', sleepy: '😴', cloudy: '☁️' },
-      1: { normal: '🐤', sleepy: '😴', cloudy: '☁️' },
-      2: { normal: '🐦', sleepy: '😴', cloudy: '☁️' },
-      3: { normal: '🦅', sleepy: '😴', cloudy: '☁️' },
+      0: { normal: '🐾', sleepy: '😴', cloudy: '☁️' }, // 子犬・子猫
+      1: { normal: '🐶', sleepy: '😴', cloudy: '☁️' }, // 犬
+      2: { normal: '🐱', sleepy: '😴', cloudy: '☁️' }, // 猫
+      3: { normal: '🐰', sleepy: '😴', cloudy: '☁️' }, // うさぎ
     },
     robot: {
       0: { normal: '🤖', sleepy: '😴', cloudy: '☁️' },

@@ -7,7 +7,7 @@ export const getDefaultData = (): AppData => ({
     level: 1,
     experience: 0,
     experienceToNext: 100,
-    theme: 'plant',
+    theme: 'animal', // デフォルトを動物に変更
     evolutionStage: 0,
     lastActiveDate: new Date().toISOString().split('T')[0],
   },

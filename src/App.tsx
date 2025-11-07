@@ -42,7 +42,7 @@ function App() {
     return (
       <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🐾</div>
           <div>読み込み中...</div>
         </div>
       </div>
