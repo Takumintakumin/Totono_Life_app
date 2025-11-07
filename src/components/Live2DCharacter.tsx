@@ -452,56 +452,56 @@ function clampValue(value: number, min: number, max: number) {
 
 function getLayoutProfile(width: number, height: number) {
   if (width <= 420) {
-    const shift = height <= 640 ? 0.3 : 0.28;
+    const shift = height <= 640 ? 0.34 : 0.32;
     return {
-      horizontalRatio: 0.18,
-      verticalRatio: 0.36,
-      minHorizontalMargin: 48,
-      minVerticalMargin: 76,
-      scaleFactor: 0.12,
-      minScale: 0.05,
-      maxScale: 0.09,
+      horizontalRatio: 0.22,
+      verticalRatio: 0.42,
+      minHorizontalMargin: 56,
+      minVerticalMargin: 88,
+      scaleFactor: 0.08,
+      minScale: 0.04,
+      maxScale: 0.07,
       verticalShift: shift,
     } as const;
   }
 
   if (width <= 640) {
-    const shift = height <= 720 ? 0.28 : 0.26;
+    const shift = height <= 720 ? 0.32 : 0.3;
     return {
-      horizontalRatio: 0.22,
-      verticalRatio: 0.38,
-      minHorizontalMargin: 56,
-      minVerticalMargin: 88,
-      scaleFactor: 0.14,
-      minScale: 0.06,
-      maxScale: 0.1,
+      horizontalRatio: 0.26,
+      verticalRatio: 0.46,
+      minHorizontalMargin: 64,
+      minVerticalMargin: 100,
+      scaleFactor: 0.1,
+      minScale: 0.05,
+      maxScale: 0.08,
       verticalShift: shift,
     } as const;
   }
 
   if (width <= 960) {
-    const shift = height <= 820 ? 0.26 : 0.24;
+    const shift = height <= 820 ? 0.32 : 0.3;
     return {
-      horizontalRatio: 0.26,
-      verticalRatio: 0.42,
-      minHorizontalMargin: 68,
-      minVerticalMargin: 100,
-      scaleFactor: 0.16,
-      minScale: 0.07,
-      maxScale: 0.11,
+      horizontalRatio: 0.3,
+      verticalRatio: 0.5,
+      minHorizontalMargin: 78,
+      minVerticalMargin: 112,
+      scaleFactor: 0.12,
+      minScale: 0.06,
+      maxScale: 0.09,
       verticalShift: shift,
     } as const;
   }
 
-  const shift = height <= 900 ? 0.28 : 0.26;
+  const shift = height <= 900 ? 0.34 : 0.32;
   return {
-    horizontalRatio: 0.3,
-    verticalRatio: 0.46,
-    minHorizontalMargin: 88,
-    minVerticalMargin: 120,
-    scaleFactor: 0.18,
-    minScale: 0.08,
-    maxScale: 0.12,
+    horizontalRatio: 0.34,
+    verticalRatio: 0.54,
+    minHorizontalMargin: 96,
+    minVerticalMargin: 132,
+    scaleFactor: 0.14,
+    minScale: 0.07,
+    maxScale: 0.1,
     verticalShift: shift,
   } as const;
 }
