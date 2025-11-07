@@ -49,7 +49,10 @@ export default function CharacterView({ character: _character, user: _user }: Ch
 
   const [activeTab, setActiveTab] = useState<'affinity' | 'chat'>('chat');
   const displayName = useMemo(() => _user.displayName || 'ゲスト', [_user.displayName]);
-  const canvasHeight = useMemo(() => Math.max(viewport.height - 240, MIN_CANVAS_HEIGHT), [viewport.height]);
+  const canvasHeight = useMemo(
+    () => Math.max(viewport.height * (viewport.width <= 520 ? 0.25 : 0.3), MIN_CANVAS_HEIGHT * 0.3),
+    [viewport.height, viewport.width]
+  );
 
   return (
     <div className="character-view-fullscreen">
