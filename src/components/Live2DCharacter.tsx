@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Application as PixiApplicationType, DisplayObject } from 'pixi.js-legacy';
-import { Ticker } from '@pixi/ticker';
 import type { Live2DModel as Live2DModelType } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
@@ -54,17 +53,6 @@ export default function Live2DCharacter({
         const { Application } = pixiModule;
         const { Live2DModel } = live2dModule;
 
-        if (!Ticker.shared) {
-          const manualTicker = new Ticker();
-          (Ticker as unknown as { shared: Ticker }).shared = manualTicker;
-        }
-        const sharedTicker = Ticker.shared;
-        if (!sharedTicker.started) {
-          sharedTicker.start();
-        }
-
-        (Live2DModel as unknown as { registerTicker?: (ticker: typeof sharedTicker) => void }).registerTicker?.(sharedTicker);
-
         const app = new Application({
           width,
           height,
@@ -81,6 +69,8 @@ export default function Live2DCharacter({
 
         containerRef.current.appendChild(canvas);
         appRef.current = app;
+
+        (Live2DModel as unknown as { registerTicker?: (ticker: unknown) => void }).registerTicker?.(app.ticker as unknown);
 
         const model = (await Live2DModel.from(modelPath, {
           autoUpdate: true,
