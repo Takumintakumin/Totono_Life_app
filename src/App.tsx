@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import Live2DContainer from './components/Live2DContainer';
 import { loadData, saveData } from './utils/api';
 import { AppData, UserProfile } from './types';
 import MorningRoutine from './pages/MorningRoutine';
 import EveningRoutine from './pages/EveningRoutine';
 import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
-import Register from './pages/Register';
 import MyPage from './pages/MyPage';
 import './App.css';
 
@@ -40,10 +38,6 @@ function App() {
     });
   };
 
-  const handleRegistered = (updated: AppData) => {
-    setData(updated);
-  };
-
   const handleProfileUpdated = (user: UserProfile) => {
     setData((prev) => {
       if (!prev) return prev;
@@ -70,7 +64,6 @@ function App() {
       <AppShell
         data={data}
         updateData={updateData}
-        onRegistered={handleRegistered}
         onProfileUpdated={handleProfileUpdated}
       />
     </Router>
@@ -82,11 +75,10 @@ export default App;
 interface AppShellProps {
   data: AppData;
   updateData: (updater: (prev: AppData) => AppData) => void;
-  onRegistered: (updated: AppData) => void;
   onProfileUpdated: (user: UserProfile) => void;
 }
 
-function AppShell({ data, updateData, onRegistered, onProfileUpdated }: AppShellProps) {
+function AppShell({ data, updateData, onProfileUpdated }: AppShellProps) {
   const location = useLocation();
   const isCharacterRoute = location.pathname.startsWith('/character');
 
@@ -121,7 +113,6 @@ function AppShell({ data, updateData, onRegistered, onProfileUpdated }: AppShell
           <Route path="/evening" element={<EveningRoutine data={data} updateData={updateData} />} />
           <Route path="/character" element={<CharacterView character={data.character} user={data.user} />} />
           <Route path="/calendar" element={<CalendarView dayLogs={data.dayLogs} />} />
-          <Route path="/register" element={<Register data={data} onRegistered={onRegistered} />} />
           <Route
             path="/mypage"
             element={<MyPage data={data} updateData={updateData} onProfileUpdated={onProfileUpdated} />}

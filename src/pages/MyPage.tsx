@@ -1,7 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { FormEvent, useMemo, useState } from 'react';
 import { AppData, UserProfile } from '../types';
-import { updateUserProfile } from '../utils/api';
 
 interface MyPageProps {
   data: AppData;
@@ -10,7 +8,6 @@ interface MyPageProps {
 }
 
 export default function MyPage({ data, updateData, onProfileUpdated }: MyPageProps) {
-  const navigate = useNavigate();
   const { user } = data;
 
   const [displayName, setDisplayName] = useState(user.displayName || '');
@@ -24,19 +21,51 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   const [eveningRoutines, setEveningRoutines] = useState(data.defaultEveningRoutines);
   const [morningTime, setMorningTime] = useState(data.settings.morningNotificationTime);
   const [eveningTime, setEveningTime] = useState(data.settings.eveningNotificationTime);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user.isRegistered) {
-      navigate('/register', { replace: true });
-      return;
-    }
-    setDisplayName(user.displayName || '');
-    setEmail(user.email || '');
-    setMorningRoutines(data.defaultMorningRoutines);
-    setEveningRoutines(data.defaultEveningRoutines);
-    setMorningTime(data.settings.morningNotificationTime);
-    setEveningTime(data.settings.eveningNotificationTime);
-  }, [user, data, navigate]);
+  const notificationPreview = useMemo(() => {
+    const now = new Date();
+
+    const parse = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      const scheduled = new Date(now);
+      scheduled.setHours(hours, minutes, 0, 0);
+      if (scheduled <= now) {
+        scheduled.setDate(scheduled.getDate() + 1);
+      }
+      return scheduled;
+    };
+
+    const nextMorning = parse(morningTime);
+    const nextEvening = parse(eveningTime);
+
+    const format = (date: Date) =>
+      date.toLocaleString('ja-JP', {
+        month: 'short',
+        day: 'numeric',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+    return {
+      morning: format(nextMorning),
+      evening: format(nextEvening),
+    };
+  }, [morningTime, eveningTime]);
+
+  const templates: Record<'morning' | 'evening', string[][]> = {
+    morning: [
+      ['水を飲む', 'ストレッチ', '朝日を浴びる'],
+      ['ベッドメイキング', '瞑想', '軽く散歩'],
+      ['日記を書く', '今日のタスク確認', '深呼吸']
+    ],
+    evening: [
+      ['夕食後の片付け', '明日の準備', 'ストレッチ'],
+      ['湯船につかる', '読書', 'スマホを手放す'],
+      ['今日を振り返る', '感謝を書く', '就寝準備']
+    ],
+  };
 
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,11 +77,15 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
     try {
       setSaving(true);
       setError(null);
-      const updatedUser = await updateUserProfile({
+      const updatedUser: UserProfile = {
+        ...user,
         displayName: displayName.trim(),
         email: email.trim(),
-        avatar: user.avatar,
-      });
+      };
+      updateData((prev) => ({
+        ...prev,
+        user: updatedUser,
+      }));
       onProfileUpdated(updatedUser);
       setMessage('プロフィールを更新しました！');
       setTimeout(() => setMessage(null), 3000);
@@ -91,6 +124,18 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       },
     }));
     setMessage('通知時間を保存しました！');
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const applyTemplate = (type: 'morning' | 'evening', index: number) => {
+    const template = templates[type][index];
+    if (type === 'morning') {
+      setMorningRoutines(template);
+    } else {
+      setEveningRoutines(template);
+    }
+    setSelectedTemplate(`${type}-${index}`);
+    setMessage(`${type === 'morning' ? '朝' : '夜'}のテンプレートを適用しました！`);
     setTimeout(() => setMessage(null), 2000);
   };
 
@@ -187,6 +232,38 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
         <h2 className="card-title" style={{ fontSize: '1.25rem' }}>⚙️ ルーティン設定</h2>
 
         <div className="settings-section">
+          <h3 className="settings-title">習慣テンプレート</h3>
+          <div className="template-grid">
+            <div className="template-column">
+              <div className="template-heading">朝</div>
+              {templates.morning.map((template, index) => (
+                <button
+                  key={`morning-template-${index}`}
+                  type="button"
+                  className={`template-button ${selectedTemplate === `morning-${index}` ? 'selected' : ''}`}
+                  onClick={() => applyTemplate('morning', index)}
+                >
+                  {template.join(' ・ ')}
+                </button>
+              ))}
+            </div>
+            <div className="template-column">
+              <div className="template-heading">夜</div>
+              {templates.evening.map((template, index) => (
+                <button
+                  key={`evening-template-${index}`}
+                  type="button"
+                  className={`template-button ${selectedTemplate === `evening-${index}` ? 'selected' : ''}`}
+                  onClick={() => applyTemplate('evening', index)}
+                >
+                  {template.join(' ・ ')}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
           <h3 className="settings-title">朝ルーティン</h3>
           <div className="routine-editor">
             {morningRoutines.map((routine, index) => (
@@ -257,6 +334,16 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h2 className="card-title" style={{ fontSize: '1.25rem' }}>🔔 通知設定</h2>
         <div className="settings-section">
+          <div className="notification-preview">
+            <div className="notification-preview-item">
+              <span className="notification-label">次の朝通知</span>
+              <span className="notification-value">{notificationPreview.morning}</span>
+            </div>
+            <div className="notification-preview-item">
+              <span className="notification-label">次の夜通知</span>
+              <span className="notification-value">{notificationPreview.evening}</span>
+            </div>
+          </div>
           <div className="input-group">
             <label className="input-label">朝の通知時間</label>
             <input
