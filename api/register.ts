@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDbPool } from './lib/db.js';
-import { handleCors, setCorsHeaders } from './utils/cors';
+import { handleCors, setCorsHeaders } from './utils/cors.js';
 
 const DEFAULT_AVATAR = {
   skinTone: '#fcd7b8',

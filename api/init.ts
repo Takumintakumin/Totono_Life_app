@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { initDatabase } from './lib/db.js';
-import { handleCors } from './utils/cors';
+import { handleCors } from './utils/cors.js';
 
 export default async function handler(
   req: VercelRequest,
