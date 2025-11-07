@@ -4,7 +4,7 @@ import type { Ticker } from '@pixi/ticker';
 import type { Live2DModel as Live2DModelType } from 'pixi-live2d-display';
 import './Live2DCharacter.css';
 
-const DEFAULT_MODEL_PATH = '/live2d/models/mao/mao_pro_t03.model3.json';
+const DEFAULT_MODEL_PATH = '/live2d/models/mao/mao_pro.model3.json';
 const DEFAULT_CORE_PATH = '/live2d/core/live2dcubismcore.min.js';
 
 type Live2DModelInstance = Live2DModelType & DisplayObject & {
@@ -108,7 +108,7 @@ export default function Live2DCharacter({
         interactiveModel.interactive = true;
         interactiveModel.buttonMode = true;
         interactiveModel.cursor = 'pointer';
-        interactiveModel.on?.('pointertap', () => triggerMotion('TapBody'));
+        interactiveModel.on?.('pointertap', () => triggerMotion('Idle'));
 
         app.stage.addChild(model as unknown as never);
         modelRef.current = model;
@@ -127,13 +127,13 @@ export default function Live2DCharacter({
           switch (action) {
             case 'morning':
             case 'night':
-              triggerMotion('TapBody');
+              triggerMotion('Idle');
               break;
             case 'miss':
-              triggerExpression('F05');
+              triggerExpression('exp_05');
               break;
             case 'blink':
-              triggerExpression('F01');
+              triggerExpression('exp_01');
               break;
             default:
               break;
