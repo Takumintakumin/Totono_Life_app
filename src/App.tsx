@@ -6,7 +6,6 @@ import MorningRoutine from './pages/MorningRoutine';
 import EveningRoutine from './pages/EveningRoutine';
 import CharacterView from './pages/CharacterView';
 import CalendarView from './pages/CalendarView';
-import Settings from './pages/Settings';
 import Register from './pages/Register';
 import MyPage from './pages/MyPage';
 import SeedAvatar from './components/SeedAvatar';
@@ -84,11 +83,7 @@ function App() {
           </Link>
           <Link to="/calendar" className="nav-link">
             <span className="nav-icon">📅</span>
-            <span className="nav-text">ログ</span>
-          </Link>
-          <Link to="/settings" className="nav-link">
-            <span className="nav-icon">⚙️</span>
-            <span className="nav-text">設定</span>
+            <span className="nav-text">カレンダー</span>
           </Link>
           <Link to="/mypage" className="nav-link">
             <span className="nav-icon">👤</span>
@@ -119,21 +114,18 @@ function App() {
               element={<CalendarView dayLogs={data.dayLogs} />}
             />
             <Route
-              path="/settings"
-              element={
-                <Settings
-                  data={data}
-                  updateData={updateData}
-                />
-              }
-            />
-            <Route
               path="/register"
               element={<Register data={data} onRegistered={handleRegistered} />}
             />
             <Route
               path="/mypage"
-              element={<MyPage data={data} onProfileUpdated={handleProfileUpdated} />}
+              element={
+                <MyPage
+                  data={data}
+                  updateData={updateData}
+                  onProfileUpdated={handleProfileUpdated}
+                />
+              }
             />
           </Routes>
         </main>

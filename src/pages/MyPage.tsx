@@ -6,10 +6,11 @@ import { updateUserProfile } from '../utils/api';
 
 interface MyPageProps {
   data: AppData;
+  updateData: (updater: (prev: AppData) => AppData) => void;
   onProfileUpdated: (user: UserProfile) => void;
 }
 
-export default function MyPage({ data, onProfileUpdated }: MyPageProps) {
+export default function MyPage({ data, updateData, onProfileUpdated }: MyPageProps) {
   const navigate = useNavigate();
   const { user } = data;
 
@@ -20,6 +21,12 @@ export default function MyPage({ data, onProfileUpdated }: MyPageProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 設定関連のstate
+  const [morningRoutines, setMorningRoutines] = useState(data.defaultMorningRoutines);
+  const [eveningRoutines, setEveningRoutines] = useState(data.defaultEveningRoutines);
+  const [morningTime, setMorningTime] = useState(data.settings.morningNotificationTime);
+  const [eveningTime, setEveningTime] = useState(data.settings.eveningNotificationTime);
+
   useEffect(() => {
     if (!user.isRegistered) {
       navigate('/register', { replace: true });
@@ -28,9 +35,13 @@ export default function MyPage({ data, onProfileUpdated }: MyPageProps) {
     setDisplayName(user.displayName || '');
     setEmail(user.email || '');
     setAvatar(user.avatar);
-  }, [user, navigate]);
+    setMorningRoutines(data.defaultMorningRoutines);
+    setEveningRoutines(data.defaultEveningRoutines);
+    setMorningTime(data.settings.morningNotificationTime);
+    setEveningTime(data.settings.eveningNotificationTime);
+  }, [user, data, navigate]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!displayName.trim()) {
       setError('表示名を入力してください');
@@ -56,58 +67,260 @@ export default function MyPage({ data, onProfileUpdated }: MyPageProps) {
     }
   };
 
+  const saveMorningRoutines = () => {
+    updateData((prev) => ({
+      ...prev,
+      defaultMorningRoutines: morningRoutines,
+    }));
+    setMessage('朝ルーティンを保存しました！');
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const saveEveningRoutines = () => {
+    updateData((prev) => ({
+      ...prev,
+      defaultEveningRoutines: eveningRoutines,
+    }));
+    setMessage('夜ルーティンを保存しました！');
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const saveNotificationTimes = () => {
+    updateData((prev) => ({
+      ...prev,
+      settings: {
+        morningNotificationTime: morningTime,
+        eveningNotificationTime: eveningTime,
+      },
+    }));
+    setMessage('通知時間を保存しました！');
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const changeTheme = (theme: 'plant' | 'animal' | 'robot') => {
+    updateData((prev) => ({
+      ...prev,
+      character: {
+        ...prev.character,
+        theme,
+      },
+    }));
+    setMessage('キャラクターテーマを変更しました！');
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const addMorningRoutine = () => {
+    setMorningRoutines([...morningRoutines, '']);
+  };
+
+  const removeMorningRoutine = (index: number) => {
+    setMorningRoutines(morningRoutines.filter((_, i) => i !== index));
+  };
+
+  const updateMorningRoutine = (index: number, value: string) => {
+    const updated = [...morningRoutines];
+    updated[index] = value;
+    setMorningRoutines(updated);
+  };
+
+  const addEveningRoutine = () => {
+    setEveningRoutines([...eveningRoutines, '']);
+  };
+
+  const removeEveningRoutine = (index: number) => {
+    setEveningRoutines(eveningRoutines.filter((_, i) => i !== index));
+  };
+
+  const updateEveningRoutine = (index: number, value: string) => {
+    const updated = [...eveningRoutines];
+    updated[index] = value;
+    setEveningRoutines(updated);
+  };
+
   return (
-    <div className="card">
-      <h1 className="card-title">👤 マイページ</h1>
-      <p style={{ color: '#546854', marginBottom: '1.5rem', textAlign: 'center' }}>
-        アバターやプロフィールを自由にカスタマイズしましょう。
-      </p>
+    <div>
+      {/* プロフィールセクション */}
+      <div className="card">
+        <h1 className="card-title">👤 マイページ</h1>
+        <p style={{ color: '#546854', marginBottom: '1.5rem', textAlign: 'center' }}>
+          アバターやプロフィールを自由にカスタマイズしましょう。
+        </p>
 
-      <form onSubmit={handleSubmit} className="form-stack">
-        <label className="input-group">
-          <span className="input-label">表示名</span>
-          <input
-            type="text"
-            className="input-field"
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-            required
-          />
-        </label>
-        <label className="input-group">
-          <span className="input-label">メールアドレス</span>
-          <input
-            type="email"
-            className="input-field"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="example@totono.life"
-          />
-        </label>
+        <form onSubmit={handleProfileSubmit} className="form-stack">
+          <label className="input-group">
+            <span className="input-label">表示名</span>
+            <input
+              type="text"
+              className="input-field"
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              required
+            />
+          </label>
+          <label className="input-group">
+            <span className="input-label">メールアドレス</span>
+            <input
+              type="email"
+              className="input-field"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="example@totono.life"
+            />
+          </label>
 
-        <section style={{ marginTop: '2rem' }}>
-          <h2 className="card-title" style={{ fontSize: '1.25rem' }}>
-            アバターを編集
-          </h2>
-          <AvatarBuilder value={avatar} onChange={setAvatar} />
-        </section>
+          <section style={{ marginTop: '2rem' }}>
+            <h2 className="card-title" style={{ fontSize: '1.25rem' }}>
+              アバターを編集
+            </h2>
+            <AvatarBuilder value={avatar} onChange={setAvatar} />
+          </section>
 
-        {message && (
-          <div className="bonus-message" style={{ marginTop: '1rem' }}>
-            {message}
+          {message && (
+            <div className="bonus-message" style={{ marginTop: '1rem' }}>
+              {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="bonus-message" style={{ marginTop: '1rem', background: '#ffe3e3', color: '#b94a48' }}>
+              {error}
+            </div>
+          )}
+
+          <button className="button" type="submit" disabled={saving} style={{ marginTop: '2rem' }}>
+            {saving ? '保存中...' : 'プロフィールを保存する'}
+          </button>
+        </form>
+      </div>
+
+      {/* ルーティン設定セクション */}
+      <div className="card" style={{ marginTop: '1.5rem' }}>
+        <h2 className="card-title" style={{ fontSize: '1.25rem' }}>⚙️ ルーティン設定</h2>
+
+        <div className="settings-section">
+          <h3 className="settings-title">朝ルーティン</h3>
+          <div className="routine-editor">
+            {morningRoutines.map((routine, index) => (
+              <div key={index} className="routine-editor-item">
+                <input
+                  type="text"
+                  className="routine-editor-input"
+                  value={routine}
+                  onChange={(e) => updateMorningRoutine(index, e.target.value)}
+                  placeholder="ルーティン項目を入力"
+                />
+                <button
+                  className="delete-button"
+                  onClick={() => removeMorningRoutine(index)}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+            <button className="add-button" onClick={addMorningRoutine}>
+              + 追加
+            </button>
+            <button
+              className="button"
+              onClick={saveMorningRoutines}
+              style={{ marginTop: '1rem' }}
+            >
+              保存
+            </button>
           </div>
-        )}
+        </div>
 
-        {error && (
-          <div className="bonus-message" style={{ marginTop: '1rem', background: '#ffe3e3', color: '#b94a48' }}>
-            {error}
+        <div className="settings-section">
+          <h3 className="settings-title">夜ルーティン</h3>
+          <div className="routine-editor">
+            {eveningRoutines.map((routine, index) => (
+              <div key={index} className="routine-editor-item">
+                <input
+                  type="text"
+                  className="routine-editor-input"
+                  value={routine}
+                  onChange={(e) => updateEveningRoutine(index, e.target.value)}
+                  placeholder="ルーティン項目を入力"
+                />
+                <button
+                  className="delete-button"
+                  onClick={() => removeEveningRoutine(index)}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+            <button className="add-button" onClick={addEveningRoutine}>
+              + 追加
+            </button>
+            <button
+              className="button"
+              onClick={saveEveningRoutines}
+              style={{ marginTop: '1rem' }}
+            >
+              保存
+            </button>
           </div>
-        )}
+        </div>
+      </div>
 
-        <button className="button" type="submit" disabled={saving} style={{ marginTop: '2rem' }}>
-          {saving ? '保存中...' : '変更を保存する'}
-        </button>
-      </form>
+      {/* 通知設定セクション */}
+      <div className="card" style={{ marginTop: '1.5rem' }}>
+        <h2 className="card-title" style={{ fontSize: '1.25rem' }}>🔔 通知設定</h2>
+        <div className="settings-section">
+          <div className="input-group">
+            <label className="input-label">朝の通知時間</label>
+            <input
+              type="time"
+              className="input-field"
+              value={morningTime}
+              onChange={(e) => setMorningTime(e.target.value)}
+            />
+          </div>
+          <div className="input-group">
+            <label className="input-label">夜の通知時間</label>
+            <input
+              type="time"
+              className="input-field"
+              value={eveningTime}
+              onChange={(e) => setEveningTime(e.target.value)}
+            />
+          </div>
+          <button className="button" onClick={saveNotificationTimes}>
+            保存
+          </button>
+        </div>
+      </div>
+
+      {/* キャラクターテーマセクション */}
+      <div className="card" style={{ marginTop: '1.5rem' }}>
+        <h2 className="card-title" style={{ fontSize: '1.25rem' }}>🎨 キャラクターテーマ</h2>
+        <div className="settings-section">
+          <div className="theme-selector">
+            <button
+              className={`theme-button ${data.character.theme === 'plant' ? 'selected' : ''}`}
+              onClick={() => changeTheme('plant')}
+            >
+              🌱
+              <span className="theme-label">植物系</span>
+            </button>
+            <button
+              className={`theme-button ${data.character.theme === 'animal' ? 'selected' : ''}`}
+              onClick={() => changeTheme('animal')}
+            >
+              🐾
+              <span className="theme-label">動物系</span>
+            </button>
+            <button
+              className={`theme-button ${data.character.theme === 'robot' ? 'selected' : ''}`}
+              onClick={() => changeTheme('robot')}
+            >
+              🤖
+              <span className="theme-label">ロボット系</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

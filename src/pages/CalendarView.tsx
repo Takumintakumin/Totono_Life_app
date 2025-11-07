@@ -73,7 +73,7 @@ export default function CalendarView({ dayLogs }: CalendarViewProps) {
 
   return (
     <div className="card">
-      <h1 className="card-title">📅 ログ</h1>
+      <h1 className="card-title">📅 カレンダー</h1>
       
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#667eea', marginBottom: '0.5rem' }}>
