@@ -29,7 +29,9 @@ npm run build
 - TypeScript
 - Vite
 - React Router
-- LocalStorage（データ永続化）
+- Vercel (Serverless Functions)
+- MySQL (データベース)
+- LocalStorage（フォールバック）
 
 ## 使い方
 
@@ -39,7 +41,71 @@ npm run build
 4. カレンダー画面で達成状況を確認
 5. 設定画面でルーティンをカスタマイズ
 
-データはブラウザのLocalStorageに保存されます。
+データはMySQLデータベースに保存されます。API接続に失敗した場合は、LocalStorageにフォールバックします。
+
+## Vercel + MySQL セットアップ
+
+### 1. MySQLデータベースの準備
+
+#### オプションA: PlanetScale（推奨）
+1. [PlanetScale](https://planetscale.com)でアカウント作成
+2. 新しいデータベースを作成
+3. 接続情報を取得
+
+#### オプションB: その他のMySQLサービス
+- AWS RDS
+- Google Cloud SQL
+- Azure Database for MySQL
+- その他のMySQLホスティングサービス
+
+### 2. データベーススキーマの作成
+
+`database/schema.sql` ファイルの内容を実行してテーブルを作成：
+
+```bash
+mysql -h YOUR_HOST -u YOUR_USER -p YOUR_DATABASE < database/schema.sql
+```
+
+または、MySQLクライアントで直接実行してください。
+
+### 3. Vercelへのデプロイ
+
+1. [Vercel](https://vercel.com)でアカウント作成
+2. GitHubリポジトリをインポート
+3. 環境変数を設定（詳細は [VERCEL_SETUP.md](./VERCEL_SETUP.md) を参照）：
+   - `MYSQL_HOST`: MySQLホスト名
+   - `MYSQL_PORT`: MySQLポート（通常は3306）
+   - `MYSQL_USER`: MySQLユーザー名
+   - `MYSQL_PASSWORD`: MySQLパスワード
+   - `MYSQL_DATABASE`: データベース名
+   - `MYSQL_SSL`: SSL接続が必要な場合は `true`（PlanetScaleの場合は `true`）
+4. デプロイを実行
+
+### 4. データベースの初期化
+
+デプロイ後、以下のエンドポイントにPOSTリクエストを送信してデータベースを初期化：
+
+```bash
+curl -X POST https://your-app.vercel.app/api/init
+```
+
+または、Vercelのダッシュボードから関数ログを確認して、自動的にテーブルが作成されることを確認してください。
+
+### 5. 環境変数の設定（ローカル開発）
+
+ローカルで開発する場合、`.env` ファイルを作成：
+
+```env
+MYSQL_HOST=your-mysql-host
+MYSQL_PORT=3306
+MYSQL_USER=your-mysql-user
+MYSQL_PASSWORD=your-mysql-password
+MYSQL_DATABASE=your-database-name
+MYSQL_SSL=false
+VITE_API_BASE_URL=http://localhost:5173/api
+```
+
+**注意**: `.env` ファイルはGitにコミットしないでください（`.gitignore`に含まれています）。
 
 ## GitHubへのプッシュ手順
 

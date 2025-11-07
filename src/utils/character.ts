@@ -1,11 +1,11 @@
-import { Character, RoutineType } from '../types';
+import { Character } from '../types';
 
 const EXP_PER_ROUTINE = 10;
 const EXP_BONUS_FULL_COMPLETE = 20;
 
 export const calculateExperience = (
   completedRoutines: number,
-  totalRoutines: number,
+  _totalRoutines: number,
   isFullComplete: boolean
 ): number => {
   let exp = completedRoutines * EXP_PER_ROUTINE;
@@ -47,7 +47,7 @@ export const addExperience = (
 };
 
 export const getCharacterAppearance = (character: Character): string => {
-  const { theme, evolutionStage, level } = character;
+  const { theme, evolutionStage } = character;
   const daysSinceActive = Math.floor(
     (Date.now() - new Date(character.lastActiveDate).getTime()) /
       (1000 * 60 * 60 * 24)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getTodayLog } from '../utils/storage';
+import { getTodayLog } from '../utils/api';
 import { calculateExperience, addExperience } from '../utils/character';
-import { AppData, DayLog } from '../types';
+import { AppData, DayLog, RoutineItem } from '../types';
 
 interface MorningRoutineProps {
   data: AppData;
@@ -22,13 +22,13 @@ export default function MorningRoutine({ data, updateData }: MorningRoutineProps
       const today = new Date().toISOString().split('T')[0];
       const todayLog = getTodayLog(prev);
       
-      const updatedRoutines = todayLog.morning.routines.map((routine) =>
+      const updatedRoutines = todayLog.morning.routines.map((routine: RoutineItem) =>
         routine.id === id
           ? { ...routine, completed: !routine.completed }
           : routine
       );
 
-      const allCompleted = updatedRoutines.every((r) => r.completed);
+      const allCompleted = updatedRoutines.every((r: RoutineItem) => r.completed);
       const wasAlreadyCompleted = todayLog.morning.completed;
 
       const newLog: DayLog = {
@@ -40,7 +40,7 @@ export default function MorningRoutine({ data, updateData }: MorningRoutineProps
       };
 
       // 経験値計算
-      const completedCount = updatedRoutines.filter((r) => r.completed).length;
+      const completedCount = updatedRoutines.filter((r: RoutineItem) => r.completed).length;
       const exp = calculateExperience(
         completedCount,
         updatedRoutines.length,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { loadData, saveData } from './utils/storage';
+import { loadData, saveData } from './utils/api';
 import { AppData } from './types';
 import MorningRoutine from './pages/MorningRoutine';
 import EveningRoutine from './pages/EveningRoutine';
@@ -10,19 +10,44 @@ import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
-  const [data, setData] = useState<AppData>(loadData());
+  const [data, setData] = useState<AppData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 初回データ読み込み
+    loadData().then((loadedData) => {
+      setData(loadedData);
+      setLoading(false);
+    });
+  }, []);
 
   useEffect(() => {
     // データが変更されたら保存
-    saveData(data);
+    if (data) {
+      saveData(data).catch((error) => {
+        console.error('Failed to save data:', error);
+      });
+    }
   }, [data]);
 
   const updateData = (updater: (prev: AppData) => AppData) => {
     setData((prev) => {
+      if (!prev) return prev;
       const updated = updater(prev);
       return updated;
     });
   };
+
+  if (loading || !data) {
+    return (
+      <div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
+          <div>読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>

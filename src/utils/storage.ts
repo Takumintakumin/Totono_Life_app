@@ -1,4 +1,4 @@
-import { AppData } from '../types';
+import { AppData, DayLog } from '../types';
 
 const STORAGE_KEY = 'totono-life-data';
 
