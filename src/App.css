@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+:root {
+  --nav-height: 80px;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -19,8 +23,12 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 80px; /* ナビゲーションバーの高さ分の余白 */
+  padding-bottom: var(--nav-height); /* ナビゲーションバーの高さ分の余白 */
   position: relative;
+}
+
+.app--full-character {
+  padding-bottom: 0;
 }
 
 .nav {
@@ -76,6 +84,16 @@ body {
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
+}
+
+.main-content--full {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: calc(100vh - var(--nav-height));
+  position: relative;
+  overflow: hidden;
 }
 
 .card {
@@ -434,6 +452,10 @@ body {
 }
 
 @media (max-width: 480px) {
+  :root {
+    --nav-height: 70px;
+  }
+
   .main-content {
     padding: 1rem;
   }
@@ -448,10 +470,6 @@ body {
 
   .nav-icon {
     font-size: 1.25rem;
-  }
-
-  .app {
-    padding-bottom: 70px; /* モバイル用の余白調整 */
   }
 
   .nav {
