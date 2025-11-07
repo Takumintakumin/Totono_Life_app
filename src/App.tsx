@@ -18,6 +18,7 @@ function App() {
     loadData().then((loadedData) => {
       setData(loadedData);
       setLoading(false);
+      console.log('[DeployCheck] App data loaded for user:', loadedData.user.id);
     });
   }, []);
 
