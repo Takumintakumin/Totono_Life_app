@@ -9,6 +9,13 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+interface PersistedMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'character';
+  timestamp: string;
+}
+
 interface ChatInterfaceProps {
   userName: string;
   character: Character;
@@ -29,6 +36,25 @@ interface AffinityDescriptor {
   tagline: string;
 }
 
+const CHAT_HISTORY_COOKIE = 'totono_chat_history';
+const CHAT_AFFINITY_COOKIE = 'totono_affinity';
+const COOKIE_MAX_DAYS = 30;
+const MAX_STORED_MESSAGES = 6;
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`));
+  return value ? decodeURIComponent(value.split('=')[1]) : null;
+}
+
+function writeCookie(name: string, value: string, days = COOKIE_MAX_DAYS) {
+  if (typeof document === 'undefined') return;
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
+
 export default function ChatInterface({ userName, character }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,29 +71,94 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     [character.level, experienceRatio]
   );
 
-  const baseDescriptor = useMemo(() => describeAffinity(baseAffinity), [baseAffinity]);
+  const cookieState = useMemo(() => {
+    if (typeof document === 'undefined') {
+      return { messages: null as ChatMessage[] | null, affinity: null as number | null };
+    }
 
-  const [affinity, setAffinity] = useState(baseAffinity);
-  const [affinityDescriptor, setAffinityDescriptor] = useState<AffinityDescriptor>(baseDescriptor);
+    let storedMessages: ChatMessage[] | null = null;
+    let storedAffinity: number | null = null;
+
+    const messageCookie = readCookie(CHAT_HISTORY_COOKIE);
+    if (messageCookie) {
+      try {
+        const parsed = JSON.parse(messageCookie) as PersistedMessage[];
+        storedMessages = parsed
+          .slice(-MAX_STORED_MESSAGES)
+          .map((msg) => ({
+            id: msg.id,
+            text: msg.text,
+            sender: msg.sender,
+            timestamp: new Date(msg.timestamp),
+          }))
+          .filter((msg) => msg.text && msg.sender && !Number.isNaN(msg.timestamp.getTime()));
+      } catch (error) {
+        console.warn('[Chat] failed to parse history cookie:', error);
+      }
+    }
+
+    const affinityCookie = readCookie(CHAT_AFFINITY_COOKIE);
+    if (affinityCookie) {
+      const parsedAffinity = Number.parseInt(affinityCookie, 10);
+      if (Number.isFinite(parsedAffinity)) {
+        storedAffinity = parsedAffinity;
+      }
+    }
+
+    return { messages: storedMessages, affinity: storedAffinity };
+  }, [character.level, experienceRatio, userName]);
+
+  const initialDescriptor = describeAffinity(cookieState.affinity ?? baseAffinity);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (cookieState.messages && cookieState.messages.length > 0) {
+      return cookieState.messages;
+    }
+    return [
+      {
+        id: 'initial',
+        text: buildInitialGreeting(userName, initialDescriptor),
+        sender: 'character',
+        timestamp: new Date(),
+      },
+    ];
+  });
+  const [affinity, setAffinity] = useState(cookieState.affinity ?? baseAffinity);
+  const [affinityDescriptor, setAffinityDescriptor] = useState<AffinityDescriptor>(initialDescriptor);
+
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [
-    {
-      id: 'initial',
-      text: buildInitialGreeting(userName, baseDescriptor),
-      sender: 'character',
-      timestamp: new Date(),
-    },
-  ]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
   useEffect(() => {
-    setAffinity(baseAffinity);
-    setAffinityDescriptor(describeAffinity(baseAffinity));
-  }, [baseAffinity]);
+    if (cookieState.affinity == null) {
+      setAffinity(baseAffinity);
+      setAffinityDescriptor(describeAffinity(baseAffinity));
+    }
+  }, [baseAffinity, cookieState.affinity]);
+
+  useEffect(() => {
+    setAffinityDescriptor(describeAffinity(affinity));
+  }, [affinity]);
+
+  useEffect(() => {
+    const persisted: PersistedMessage[] = messages
+      .slice(-MAX_STORED_MESSAGES)
+      .map((msg) => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: msg.timestamp.toISOString(),
+      }));
+    writeCookie(CHAT_HISTORY_COOKIE, JSON.stringify(persisted));
+  }, [messages]);
+
+  useEffect(() => {
+    writeCookie(CHAT_AFFINITY_COOKIE, affinity.toString());
+  }, [affinity]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
