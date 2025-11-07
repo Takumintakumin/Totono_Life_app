@@ -453,7 +453,7 @@ function getLayoutProfile(width: number, height: number) {
       verticalRatio: 0.15,
       minHorizontalMargin: 28,
       minVerticalMargin: 44,
-      maxScale: 0.42,
+      maxScale: 0.07,
       verticalShift: shift,
     } as const;
   }
@@ -465,7 +465,7 @@ function getLayoutProfile(width: number, height: number) {
       verticalRatio: 0.18,
       minHorizontalMargin: 40,
       minVerticalMargin: 60,
-      maxScale: 0.39,
+      maxScale: 0.065,
       verticalShift: shift,
     } as const;
   }
@@ -477,7 +477,7 @@ function getLayoutProfile(width: number, height: number) {
       verticalRatio: 0.2,
       minHorizontalMargin: 68,
       minVerticalMargin: 88,
-      maxScale: 0.36,
+      maxScale: 0.06,
       verticalShift: shift,
     } as const;
   }
@@ -488,7 +488,7 @@ function getLayoutProfile(width: number, height: number) {
     verticalRatio: 0.24,
     minHorizontalMargin: 92,
     minVerticalMargin: 112,
-    maxScale: 0.34,
+    maxScale: 0.055,
     verticalShift: shift,
   } as const;
 }
