@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Live2DContainer from '../components/Live2DContainer';
 import ChatInterface from '../components/ChatInterface';
 import { Character, UserProfile } from '../types';
@@ -47,28 +47,57 @@ export default function CharacterView({ character: _character, user: _user }: Ch
     };
   }, []);
 
+  const [activeTab, setActiveTab] = useState<'affinity' | 'chat'>('chat');
+  const displayName = useMemo(() => _user.displayName || 'ゲスト', [_user.displayName]);
+
   return (
     <div className="character-view-fullscreen">
-      <div className="character-canvas">
-        <Live2DContainer
-          width={viewport.width}
-          height={viewport.height}
-          idleMotionGroup="Idle"
-        />
-        <div className="character-overlay">
-          <div className="character-overlay-card">
-            <div className="character-overlay-tabs">
-              <button type="button" className="character-overlay-tab active">
+      <div className="character-layout">
+        <aside className="character-sidebar">
+          <div className="character-sidecard">
+            <div className="character-sidecard-header">
+              <span className="character-sidecard-title">{displayName}のステータス</span>
+              <span className="character-sidecard-caption">キャラと話して親密度を高めよう</span>
+            </div>
+
+            <div className="character-sidecard-tabs">
+              <button
+                type="button"
+                className={`character-sidecard-tab ${activeTab === 'affinity' ? 'active' : ''}`}
+                onClick={() => setActiveTab('affinity')}
+              >
                 💞 なつき度
               </button>
-              <button type="button" className="character-overlay-tab">
+              <button
+                type="button"
+                className={`character-sidecard-tab ${activeTab === 'chat' ? 'active' : ''}`}
+                onClick={() => setActiveTab('chat')}
+              >
                 💬 おしゃべり
               </button>
             </div>
-            <div className="character-overlay-body">
-              <ChatInterface userName={_user.displayName || 'ゲスト'} character={_character} />
+
+            <div className="character-sidecard-body">
+              {activeTab === 'chat' ? (
+                <ChatInterface userName={displayName} character={_character} />
+              ) : (
+                <div className="character-affinity-panel">
+                  <p>しばらく会話してキャラクターとの絆を深めましょう。</p>
+                  <p style={{ fontSize: '0.85rem', color: 'rgba(47, 59, 89, 0.75)' }}>
+                    現在のレベル: {_character.level}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+        </aside>
+
+        <div className="character-canvas">
+          <Live2DContainer
+            width={viewport.width}
+            height={viewport.height}
+            idleMotionGroup="Idle"
+          />
         </div>
       </div>
     </div>
