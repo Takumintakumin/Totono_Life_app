@@ -49,56 +49,57 @@ export default function CharacterView({ character: _character, user: _user }: Ch
 
   const [activeTab, setActiveTab] = useState<'affinity' | 'chat'>('chat');
   const displayName = useMemo(() => _user.displayName || 'ゲスト', [_user.displayName]);
+  const canvasHeight = useMemo(() => Math.max(viewport.height - 240, MIN_CANVAS_HEIGHT), [viewport.height]);
 
   return (
     <div className="character-view-fullscreen">
-      <div className="character-layout">
-        <aside className="character-sidebar">
-          <div className="character-sidecard">
-            <div className="character-sidecard-header">
-              <span className="character-sidecard-title">{displayName}のステータス</span>
-              <span className="character-sidecard-caption">キャラと話して親密度を高めよう</span>
-            </div>
-
-            <div className="character-sidecard-tabs">
-              <button
-                type="button"
-                className={`character-sidecard-tab ${activeTab === 'affinity' ? 'active' : ''}`}
-                onClick={() => setActiveTab('affinity')}
-              >
-                💞 なつき度
-              </button>
-              <button
-                type="button"
-                className={`character-sidecard-tab ${activeTab === 'chat' ? 'active' : ''}`}
-                onClick={() => setActiveTab('chat')}
-              >
-                💬 おしゃべり
-              </button>
-            </div>
-
-            <div className="character-sidecard-body">
-              {activeTab === 'chat' ? (
-                <ChatInterface userName={displayName} character={_character} />
-              ) : (
-                <div className="character-affinity-panel">
-                  <p>しばらく会話してキャラクターとの絆を深めましょう。</p>
-                  <p style={{ fontSize: '0.85rem', color: 'rgba(47, 59, 89, 0.75)' }}>
-                    現在のレベル: {_character.level}
-                  </p>
-                </div>
-              )}
-            </div>
+      <div className="character-overlay-wrapper">
+        <div className="character-overlay-card">
+          <div className="character-overlay-header">
+            <span className="character-overlay-title">{displayName}のステータス</span>
+            <span className="character-overlay-caption">キャラと話して親密度を高めよう</span>
           </div>
-        </aside>
 
-        <div className="character-canvas">
-          <Live2DContainer
-            width={viewport.width}
-            height={viewport.height}
-            idleMotionGroup="Idle"
-          />
+          <div className="character-overlay-tabs">
+            <button
+              type="button"
+              className={`character-overlay-tab ${activeTab === 'affinity' ? 'active' : ''}`}
+              onClick={() => setActiveTab('affinity')}
+            >
+              💞 なつき度
+            </button>
+            <button
+              type="button"
+              className={`character-overlay-tab ${activeTab === 'chat' ? 'active' : ''}`}
+              onClick={() => setActiveTab('chat')}
+            >
+              💬 おしゃべり
+            </button>
+          </div>
+
+          <div className="character-overlay-body">
+            {activeTab === 'chat' ? (
+              <ChatInterface userName={displayName} character={_character} />
+            ) : (
+              <div className="character-affinity-panel">
+                <p className="character-affinity-intro">最近の会話でキャラクターの心が温まっています。</p>
+                <ul className="character-affinity-list">
+                  <li><span>レベル</span><strong>{_character.level}</strong></li>
+                  <li><span>経験値</span><strong>{_character.experience} / {_character.experienceToNext}</strong></li>
+                  <li><span>進化段階</span><strong>{_character.evolutionStage}</strong></li>
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
+      </div>
+
+      <div className="character-canvas">
+        <Live2DContainer
+          width={viewport.width}
+          height={canvasHeight}
+          idleMotionGroup="Idle"
+        />
       </div>
     </div>
   );

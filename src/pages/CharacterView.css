@@ -1,58 +1,51 @@
 .character-view-fullscreen {
   display: flex;
-  justify-content: center;
-  padding: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   min-height: calc(100vh - var(--nav-height));
   width: 100%;
+  padding: 0.75rem 0 1.5rem;
+  gap: 0.9rem;
 }
 
-.character-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 320px) 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem 1.75rem;
-  width: 100%;
-  max-width: 1100px;
+.character-overlay-wrapper {
+  width: min(360px, 92vw);
+  pointer-events: auto;
+  padding: 0 1rem;
 }
 
-.character-sidebar {
-  display: flex;
-  flex-direction: column;
-}
-
-.character-sidecard {
+.character-overlay-card {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 18px;
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  height: min(90vh, 600px);
-  pointer-events: auto;
 }
 
-.character-sidecard-header {
+.character-overlay-header {
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.character-sidecard-title {
+.character-overlay-title {
   font-size: 1rem;
   font-weight: 700;
   color: #2f3b59;
 }
 
-.character-sidecard-caption {
+.character-overlay-caption {
   font-size: 0.8rem;
   color: rgba(47, 59, 89, 0.65);
 }
 
-.character-sidecard-tabs {
+.character-overlay-tabs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   background: rgba(102, 126, 234, 0.12);
@@ -60,7 +53,7 @@
   padding: 0.25rem;
 }
 
-.character-sidecard-tab {
+.character-overlay-tab {
   background: transparent;
   border: none;
   border-radius: 10px;
@@ -71,50 +64,84 @@
   transition: all 0.2s ease;
 }
 
-.character-sidecard-tab.active {
+.character-overlay-tab.active {
   background: white;
   color: #2f3b59;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
-.character-sidecard-body {
-  flex: 1;
+.character-overlay-body {
+  max-height: 360px;
   overflow: hidden;
 }
 
-.character-canvas {
-  height: calc(100vh - var(--nav-height) - 3rem);
+.character-affinity-panel {
   display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: rgba(47, 59, 89, 0.85);
+}
+
+.character-affinity-intro {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.character-affinity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.character-affinity-list li {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  font-size: 0.85rem;
+}
+
+.character-affinity-list li span {
+  color: rgba(47, 59, 89, 0.65);
+}
+
+.character-affinity-list li strong {
+  color: #2f3b59;
+}
+
+.character-canvas {
+  flex: 1;
+  width: 100%;
+  display: flex;
   justify-content: center;
+  align-items: center;
+  padding: 0 1rem;
 }
 
 .character-canvas > .live2d-character {
-  width: 100%;
   height: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
-@media (max-width: 1024px) {
-  .character-layout {
-    grid-template-columns: minmax(220px, 280px) 1fr;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-  }
-}
-
-@media (max-width: 780px) {
-  .character-layout {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-    gap: 1rem;
+@media (max-width: 640px) {
+  .character-view-fullscreen {
+    padding: 0.6rem 0 1.25rem;
   }
 
-  .character-sidecard {
-    height: auto;
-    order: -1;
+  .character-overlay-wrapper {
+    padding: 0 0.75rem;
+    width: min(340px, 92vw);
+  }
+
+  .character-overlay-card {
+    padding: 0.85rem 0.9rem;
   }
 
   .character-canvas {
-    height: calc(100vh - var(--nav-height) - 14rem);
+    padding: 0 0.5rem;
   }
 }
