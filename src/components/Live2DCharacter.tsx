@@ -81,6 +81,7 @@ export default function Live2DCharacter({
         const { Live2DModel } = live2dModule;
 
         const devicePixelRatio = window.devicePixelRatio ?? 1;
+        const resolution = Math.min(devicePixelRatio * 1.75, 3);
         const app = new Application({
           width,
           height,
@@ -88,7 +89,7 @@ export default function Live2DCharacter({
           backgroundAlpha: 0,
           antialias: true,
           autoDensity: true,
-          resolution: devicePixelRatio,
+          resolution,
         });
 
         const canvas = app.view as HTMLCanvasElement;
@@ -142,10 +143,12 @@ export default function Live2DCharacter({
 
         const posX = width / 2;
         const modelHeight = nativeHeight * scale;
-        const topMargin = height * (width <= 520 ? 0.16 : 0.11);
-        const bottomMargin = height * (width <= 520 ? 0.14 : 0.125);
-        const minY = modelHeight / 2 + topMargin;
-        const targetY = height - bottomMargin - modelHeight / 2;
+        const centimeterPx = 37.7952755906;
+        const topMarginPx = height * (width <= 520 ? 0.16 : 0.11);
+        const baseBottomMarginPx = height * (width <= 520 ? 0.14 : 0.125);
+        const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx, height * 0.04);
+        const minY = modelHeight / 2 + topMarginPx;
+        const targetY = height - bottomMarginPx - modelHeight / 2;
         model.position?.set?.(posX, Math.max(minY, targetY));
 
         const interactiveModel = model as unknown as {
@@ -167,7 +170,7 @@ export default function Live2DCharacter({
         const tickerCallback = (delta: number) => {
           const currentModel = modelRef.current;
           if (!currentModel) return;
-          const normalizedDelta = delta * 1.85;
+          const normalizedDelta = delta * 1.85 * 3;
           elapsed += normalizedDelta;
 
           currentModel.update?.(normalizedDelta);

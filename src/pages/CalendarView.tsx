@@ -116,19 +116,21 @@ export default function CalendarView({ dayLogs }: CalendarViewProps) {
     <div className="calendar-container">
       <div className="card calendar-header-card">
         <div className="calendar-header">
-          <button className="calendar-nav-button" onClick={goToPreviousMonth}>
-            ←
+          <button className="calendar-nav-button" onClick={goToPreviousMonth} aria-label="前の月へ">
+            ‹
           </button>
-          <h1 className="calendar-title">
-            {year}年 {monthNames[month]}
-          </h1>
-          <button className="calendar-nav-button" onClick={goToNextMonth}>
-            →
+          <div className="calendar-title-block">
+            <h1 className="calendar-title">
+              {year}年 {monthNames[month]}
+            </h1>
+            <button className="calendar-today-button" onClick={goToToday}>
+              今日へジャンプ
+            </button>
+          </div>
+          <button className="calendar-nav-button" onClick={goToNextMonth} aria-label="次の月へ">
+            ›
           </button>
         </div>
-        <button className="calendar-today-button" onClick={goToToday}>
-          今日
-        </button>
         <div className="calendar-stats">
           <div className="stat-item">
             <span className="stat-label">連続達成</span>
