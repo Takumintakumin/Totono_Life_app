@@ -41,6 +41,12 @@ const CHAT_AFFINITY_COOKIE = 'totono_affinity';
 const COOKIE_MAX_DAYS = 30;
 const MAX_STORED_MESSAGES = 6;
 
+const THEME_LABELS: Record<Character['theme'], string> = {
+  plant: '植物',
+  animal: 'どうぶつ',
+  robot: 'ロボット',
+};
+
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
   const value = document.cookie
@@ -126,6 +132,24 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+
+  const themeLabel = useMemo(() => THEME_LABELS[character.theme] ?? 'キャラクター', [character.theme]);
+
+  const lastActiveLabel = useMemo(() => {
+    if (!character.lastActiveDate) {
+      return '最終ログイン: なし';
+    }
+    const lastActive = new Date(character.lastActiveDate);
+    if (Number.isNaN(lastActive.getTime())) {
+      return '最終ログイン: なし';
+    }
+    const formatter = new Intl.DateTimeFormat('ja-JP', {
+      month: 'numeric',
+      day: 'numeric',
+      weekday: 'short',
+    });
+    return `最終ログイン: ${formatter.format(lastActive)}`;
+  }, [character.lastActiveDate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -213,46 +237,64 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
   return (
     <div className="chat-interface">
-      <div className="chat-messages">
-        {messages.map((message) => (
-          <div key={message.id} className={`chat-message ${message.sender}`}>
-            <div className="chat-message-content">{message.text}</div>
-            <div className="chat-message-time">
-              {message.timestamp.toLocaleTimeString('ja-JP', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="chat-message character typing">
-            <div className="chat-message-content">
-              <span className="typing-indicator">
-                <span />
-                <span />
-                <span />
-              </span>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+      <div className="chat-header">
+        <div className="chat-header-main">
+          <span className="chat-title">💬 おしゃべり</span>
+          <span className="chat-subtitle">{themeLabel}タイプの相棒と会話を楽しもう</span>
+        </div>
+        <div className="chat-header-meta">
+          <span className="chat-badge">Lv {character.level}</span>
+          <span className="chat-badge">進化段階 {character.evolutionStage}</span>
+          <span className="chat-meta-entry">{lastActiveLabel}</span>
+        </div>
       </div>
 
-      <form className="chat-input-form" onSubmit={handleSend}>
-        <input
-          ref={inputRef}
-          type="text"
-          className="chat-input"
-          value={inputText}
-          onChange={(event) => setInputText(event.target.value)}
-          placeholder="メッセージを入力..."
-          disabled={isTyping}
-        />
-        <button type="submit" className="chat-send-button" disabled={isTyping || !inputText.trim()}>
-          送信
-        </button>
-      </form>
+      <div className="chat-body">
+        <div className="chat-messages">
+          {messages.map((message) => (
+            <div key={message.id} className={`chat-message ${message.sender}`}>
+              <div className="chat-message-content">{message.text}</div>
+              <div className="chat-message-time">
+                {message.timestamp.toLocaleTimeString('ja-JP', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          ))}
+          {isTyping && (
+            <div className="chat-message character typing">
+              <div className="chat-message-content">
+                <span className="typing-indicator">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form className="chat-input-form" onSubmit={handleSend}>
+          <input
+            ref={inputRef}
+            type="text"
+            className="chat-input"
+            value={inputText}
+            onChange={(event) => setInputText(event.target.value)}
+            placeholder="メッセージを入力..."
+            disabled={isTyping}
+          />
+          <button type="submit" className="chat-send-button" disabled={isTyping || !inputText.trim()}>
+            送信
+          </button>
+        </form>
+      </div>
+
+      <div className="chat-footer-hint">
+        ちょっとした出来事や気持ちを共有すると、会話がもっと自然に続きます。
+      </div>
     </div>
   );
 }
