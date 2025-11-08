@@ -64,7 +64,7 @@ function writeCookie(name: string, value: string, days = COOKIE_MAX_DAYS) {
 
 export default function ChatInterface({ userName, character }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const experienceRatio = useMemo(() => {
     if (!character.experienceToNext) {
@@ -174,12 +174,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     const dismissed = localStorage.getItem(CHAT_HINT_DISMISSED);
     setShowQuickHint(!dismissed);
   }, []);
-
-  useEffect(() => {
-    if (!inputRef.current) return;
-    inputRef.current.style.height = 'auto';
-    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 200)}px`;
-  }, [inputText]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -319,13 +313,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
         </div>
 
         <form className="chat-input-form" onSubmit={handleSend}>
-          <textarea
+          <input
             ref={inputRef}
             className="chat-input"
             value={inputText}
             onChange={(event) => setInputText(event.target.value)}
             placeholder="メッセージを入力..."
-            rows={1}
+            type="text"
+            inputMode="text"
           />
           <button
             type="button"
