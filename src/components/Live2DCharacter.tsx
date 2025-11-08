@@ -80,6 +80,7 @@ export default function Live2DCharacter({
         };
         const { Live2DModel } = live2dModule;
 
+        const devicePixelRatio = window.devicePixelRatio ?? 1;
         const app = new Application({
           width,
           height,
@@ -87,6 +88,7 @@ export default function Live2DCharacter({
           backgroundAlpha: 0,
           antialias: true,
           autoDensity: true,
+          resolution: devicePixelRatio,
         });
 
         const canvas = app.view as HTMLCanvasElement;
@@ -126,7 +128,7 @@ export default function Live2DCharacter({
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
 
         const availableWidth = width;
-        const availableHeight = height * (width <= 520 ? 0.36 : 0.44);
+        const availableHeight = height * (width <= 520 ? 0.35 : 0.43);
 
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
         const scaleMultiplier = width <= 520 ? 0.032 : 0.038;
@@ -140,8 +142,8 @@ export default function Live2DCharacter({
 
         const posX = width / 2;
         const modelHeight = nativeHeight * scale;
-        const topMargin = height * (width <= 520 ? 0.075 : 0.055);
-        const bottomMargin = height * (width <= 520 ? 0.08 : 0.085);
+        const topMargin = height * (width <= 520 ? 0.12 : 0.085);
+        const bottomMargin = height * (width <= 520 ? 0.12 : 0.11);
         const minY = modelHeight / 2 + topMargin;
         const targetY = height - bottomMargin - modelHeight / 2;
         model.position?.set?.(posX, Math.max(minY, targetY));
