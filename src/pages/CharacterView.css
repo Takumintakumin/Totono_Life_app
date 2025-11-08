@@ -85,16 +85,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  flex: 0 0 auto;
-  min-height: clamp(210px, 32vh, 300px);
-  max-height: clamp(300px, 42vh, 340px);
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: clamp(280px, 58vh, 520px);
+  max-height: none;
+  overflow-y: auto;
 }
 
 .character-chat-container {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
-  min-height: clamp(190px, 28vh, 260px);
+  min-height: clamp(240px, 48vh, 420px);
 }
 
 .character-chat-container .chat-interface {
@@ -143,17 +143,17 @@
 
 
 .character-canvas {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: clamp(360px, 68vh, 720px);
-  padding: clamp(0.2rem, 0.9vh, 0.6rem) 0.35rem 0;
+  min-height: clamp(120px, 22vh, 260px);
+  padding: clamp(0.2rem, 0.9vh, 0.6rem) 0.35rem env(safe-area-inset-bottom, 0px);
 }
 
 .character-canvas > .live2d-character {
-  height: 100%;
+  height: clamp(120px, 24vh, 280px);
   width: auto;
   max-width: 100%;
   transform-origin: top center;
@@ -178,15 +178,18 @@
   }
 
   .character-overlay-body {
-    min-height: clamp(200px, 36vh, 280px);
-    max-height: clamp(280px, 46vh, 320px);
+    min-height: clamp(260px, 62vh, 480px);
   }
 
   .character-chat-container {
-    min-height: clamp(180px, 32vh, 240px);
+    min-height: clamp(220px, 54vh, 420px);
   }
 
   .character-canvas {
-    min-height: clamp(320px, 68vh, 640px);
+    min-height: clamp(120px, 26vh, 220px);
+  }
+
+  .character-canvas > .live2d-character {
+    height: clamp(120px, 28vh, 240px);
   }
 }
