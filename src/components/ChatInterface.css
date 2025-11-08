@@ -96,6 +96,7 @@
   gap: 0.5rem;
   padding: 0.55rem 0 0.6rem;
   background: linear-gradient(180deg, rgba(247, 248, 255, 0.94) 0%, rgba(255, 255, 255, 1) 55%);
+  min-height: 0;
 }
 
 .chat-messages {
@@ -107,6 +108,7 @@
   flex-direction: column;
   gap: 0.75rem;
   scroll-padding-bottom: 1rem;
+  min-height: 0;
 }
 
 .chat-messages::before,
