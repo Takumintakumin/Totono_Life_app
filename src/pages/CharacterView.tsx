@@ -64,9 +64,9 @@ export default function CharacterView({ character: _character, user: _user }: Ch
   }, [overlayCardHeight, viewport.height]);
 
   const live2DHeight = useMemo(() => {
-    const scale = viewport.width <= 520 ? 0.8 : 0.7;
+    const scale = viewport.width <= 520 ? 0.48 : 0.42;
     const scaled = canvasHeight * scale;
-    return Math.max(Math.min(scaled, canvasHeight), 180);
+    return Math.max(Math.min(scaled, canvasHeight * 0.75), 160);
   }, [canvasHeight, viewport.width]);
 
   return (
