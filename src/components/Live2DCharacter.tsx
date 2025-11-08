@@ -53,6 +53,13 @@ export default function Live2DCharacter({
   const appRef = useRef<PixiApplicationType | null>(null);
   const modelRef = useRef<Live2DModelInstance | null>(null);
   const tickerCallbackRef = useRef<((delta: number) => void) | null>(null);
+  const layoutRafRef = useRef<number | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const fallbackResizeHandlerRef = useRef<(() => void) | null>(null);
+  const modelDimensionsRef = useRef<{ nativeWidth: number; nativeHeight: number }>({
+    nativeWidth: 1,
+    nativeHeight: 1,
+  });
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const ambientTimeoutRef = useRef<number | null>(null);
@@ -127,29 +134,7 @@ export default function Live2DCharacter({
 
         const nativeWidth = coreModel?.getCanvasWidth?.() ?? 1;
         const nativeHeight = coreModel?.getCanvasHeight?.() ?? 1;
-
-        const availableWidth = width;
-        const availableHeight = height * (width <= 520 ? 0.38 : 0.46);
-
-        const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const scaleMultiplier = width <= 520 ? 0.03 : 0.036;
-        const minScale = width <= 520 ? 0.015 : 0.017;
-        const maxScale = width <= 520 ? 0.038 : 0.043;
-        const scale = clampValue(rawScale * scaleMultiplier, minScale, maxScale);
-
-        if (typeof model.scale === 'object' && 'set' in model.scale) {
-          (model.scale as { set: (x: number, y?: number) => void }).set(scale);
-        }
-
-        const posX = width / 2;
-        const modelHeight = nativeHeight * scale;
-        const centimeterPx = 37.7952755906;
-        const topMarginPx = height * (width <= 520 ? 0.16 : 0.11);
-        const baseBottomMarginPx = height * (width <= 520 ? 0.14 : 0.125);
-        const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx * 0.35, height * 0.055);
-        const minY = modelHeight / 2 + topMarginPx;
-        const targetY = height - bottomMarginPx - modelHeight / 2;
-        model.position?.set?.(posX, Math.max(minY, targetY));
+        modelDimensionsRef.current = { nativeWidth, nativeHeight };
 
         const interactiveModel = model as unknown as {
           interactive?: boolean;
@@ -165,6 +150,67 @@ export default function Live2DCharacter({
 
         app.stage.addChild(model as unknown as never);
         modelRef.current = model;
+
+        const applyResponsiveLayout = () => {
+          const currentModel = modelRef.current;
+          const currentApp = appRef.current;
+          const container = containerRef.current;
+          if (!currentModel || !currentApp || !container) {
+            return;
+          }
+
+          const rect = container.getBoundingClientRect();
+          const containerWidth = rect.width > 0 ? rect.width : width;
+          const containerHeight = rect.height > 0 ? rect.height : height;
+
+          if (containerWidth <= 0 || containerHeight <= 0) {
+            return;
+          }
+
+          currentApp.renderer.resize(containerWidth, containerHeight);
+
+          const { nativeWidth: storedNativeWidth, nativeHeight: storedNativeHeight } = modelDimensionsRef.current;
+          const layout = calculateResponsiveLayout({
+            containerWidth,
+            containerHeight,
+            nativeWidth: storedNativeWidth,
+            nativeHeight: storedNativeHeight,
+          });
+
+          if (typeof currentModel.scale === 'object' && 'set' in currentModel.scale) {
+            (currentModel.scale as { set: (x: number, y?: number) => void }).set(layout.scale);
+          }
+          currentModel.position?.set?.(layout.posX, layout.posY);
+        };
+
+        const scheduleLayout = () => {
+          if (layoutRafRef.current != null) {
+            return;
+          }
+          layoutRafRef.current = window.requestAnimationFrame(() => {
+            layoutRafRef.current = null;
+            applyResponsiveLayout();
+          });
+        };
+
+        scheduleLayout();
+
+        if (typeof ResizeObserver !== 'undefined') {
+          const observer = new ResizeObserver(() => {
+            scheduleLayout();
+          });
+          if (containerRef.current) {
+            observer.observe(containerRef.current);
+          }
+          resizeObserverRef.current = observer;
+        } else {
+          const handleResize = () => {
+            scheduleLayout();
+          };
+          fallbackResizeHandlerRef.current = handleResize;
+          window.addEventListener('resize', handleResize);
+          window.addEventListener('orientationchange', handleResize);
+        }
 
         let elapsed = 0;
         const tickerCallback = (delta: number) => {
@@ -405,6 +451,22 @@ export default function Live2DCharacter({
         delete window.charAction;
       }
 
+      if (layoutRafRef.current != null) {
+        window.cancelAnimationFrame(layoutRafRef.current);
+        layoutRafRef.current = null;
+      }
+
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+
+      if (fallbackResizeHandlerRef.current) {
+        window.removeEventListener('resize', fallbackResizeHandlerRef.current);
+        window.removeEventListener('orientationchange', fallbackResizeHandlerRef.current);
+        fallbackResizeHandlerRef.current = null;
+      }
+
       if (appRef.current && tickerCallbackRef.current) {
         appRef.current.ticker.remove(tickerCallbackRef.current);
       }
@@ -511,5 +573,44 @@ function isMotionPlaying(model: Live2DModelInstance | null): boolean {
   }
 
   return false;
+}
+
+function calculateResponsiveLayout({
+  containerWidth,
+  containerHeight,
+  nativeWidth,
+  nativeHeight,
+}: {
+  containerWidth: number;
+  containerHeight: number;
+  nativeWidth: number;
+  nativeHeight: number;
+}) {
+  const isNarrow = containerWidth <= 520;
+  const availableWidth = containerWidth;
+  const availableHeight = containerHeight * (isNarrow ? 0.38 : 0.46);
+
+  const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
+  const scaleMultiplier = isNarrow ? 0.03 : 0.036;
+  const minScale = isNarrow ? 0.015 : 0.017;
+  const maxScale = isNarrow ? 0.038 : 0.043;
+  const scale = clampValue(rawScale * scaleMultiplier, minScale, maxScale);
+
+  const centimeterPx = 37.7952755906;
+  const topMarginPx = containerHeight * (isNarrow ? 0.16 : 0.11);
+  const baseBottomMarginPx = containerHeight * (isNarrow ? 0.14 : 0.125);
+  const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx * 0.35, containerHeight * 0.055);
+
+  const posX = containerWidth / 2;
+  const modelHeight = nativeHeight * scale;
+  const minY = modelHeight / 2 + topMarginPx;
+  const targetY = containerHeight - bottomMarginPx - modelHeight / 2;
+  const posY = Math.max(minY, targetY);
+
+  return {
+    scale,
+    posX,
+    posY,
+  };
 }
 
