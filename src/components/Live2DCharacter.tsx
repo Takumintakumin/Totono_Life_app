@@ -132,9 +132,9 @@ export default function Live2DCharacter({
         const availableHeight = height * (width <= 520 ? 0.38 : 0.46);
 
         const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-        const scaleMultiplier = width <= 520 ? 0.032 : 0.038;
-        const minScale = width <= 520 ? 0.016 : 0.018;
-        const maxScale = width <= 520 ? 0.04 : 0.045;
+        const scaleMultiplier = width <= 520 ? 0.03 : 0.036;
+        const minScale = width <= 520 ? 0.015 : 0.017;
+        const maxScale = width <= 520 ? 0.038 : 0.043;
         const scale = clampValue(rawScale * scaleMultiplier, minScale, maxScale);
 
         if (typeof model.scale === 'object' && 'set' in model.scale) {
@@ -146,7 +146,7 @@ export default function Live2DCharacter({
         const centimeterPx = 37.7952755906;
         const topMarginPx = height * (width <= 520 ? 0.16 : 0.11);
         const baseBottomMarginPx = height * (width <= 520 ? 0.14 : 0.125);
-        const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx, height * 0.04);
+        const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx * 0.35, height * 0.055);
         const minY = modelHeight / 2 + topMarginPx;
         const targetY = height - bottomMarginPx - modelHeight / 2;
         model.position?.set?.(posX, Math.max(minY, targetY));
