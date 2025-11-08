@@ -10,8 +10,6 @@ interface CharacterViewProps {
 }
 
 const DEFAULT_NAV_HEIGHT = 80;
-const MIN_CANVAS_HEIGHT = 360;
-
 export default function CharacterView({ character: _character, user: _user }: CharacterViewProps) {
   const [viewport, setViewport] = useState(() => {
     if (typeof window === 'undefined') {
@@ -23,7 +21,7 @@ export default function CharacterView({ character: _character, user: _user }: Ch
 
     return {
       width: window.innerWidth,
-      height: Math.max(window.innerHeight - getNavHeight(), MIN_CANVAS_HEIGHT),
+      height: Math.max(window.innerHeight - getNavHeight(), 480),
     };
   });
 
@@ -33,9 +31,10 @@ export default function CharacterView({ character: _character, user: _user }: Ch
     }
 
     const updateViewport = () => {
+      const nextHeight = Math.max(window.innerHeight - getNavHeight(), 480);
       setViewport({
         width: window.innerWidth,
-        height: Math.max(window.innerHeight - getNavHeight(), MIN_CANVAS_HEIGHT),
+        height: nextHeight,
       });
     };
 
@@ -49,15 +48,34 @@ export default function CharacterView({ character: _character, user: _user }: Ch
 
   const [activeTab, setActiveTab] = useState<'affinity' | 'chat'>('chat');
   const displayName = useMemo(() => _user.displayName || 'ゲスト', [_user.displayName]);
-  const canvasHeight = useMemo(
-    () => Math.max(viewport.height * (viewport.width <= 520 ? 0.65 : 0.68), MIN_CANVAS_HEIGHT * 0.55),
-    [viewport.height, viewport.width]
-  );
+  const layoutGap = 16;
+
+  const overlayCardHeight = useMemo(() => {
+    const ratio = viewport.width <= 520 ? 0.62 : 0.5;
+    const minHeight = 340;
+    const maxHeight = Math.max(minHeight, viewport.height - 220);
+    const tentative = viewport.height * ratio;
+    return Math.min(Math.max(tentative, minHeight), maxHeight);
+  }, [viewport.height, viewport.width]);
+
+  const canvasHeight = useMemo(() => {
+    const available = viewport.height - overlayCardHeight - layoutGap;
+    return Math.max(available, 200);
+  }, [overlayCardHeight, viewport.height]);
+
+  const live2DHeight = useMemo(() => {
+    const scale = viewport.width <= 520 ? 0.8 : 0.7;
+    const scaled = canvasHeight * scale;
+    return Math.max(Math.min(scaled, canvasHeight), 180);
+  }, [canvasHeight, viewport.width]);
 
   return (
-    <div className="character-view-fullscreen">
+    <div
+      className="character-view-fullscreen"
+      style={{ height: viewport.height, minHeight: viewport.height }}
+    >
       <div className="character-overlay-wrapper">
-        <div className="character-overlay-card">
+        <div className="character-overlay-card" style={{ height: overlayCardHeight }}>
           <div className="character-overlay-header">
             <span className="character-overlay-title">{displayName}のステータス</span>
             <span className="character-overlay-caption">キャラと話して親密度を高めよう</span>
@@ -99,10 +117,10 @@ export default function CharacterView({ character: _character, user: _user }: Ch
         </div>
       </div>
 
-      <div className="character-canvas">
+      <div className="character-canvas" style={{ height: canvasHeight }}>
         <Live2DContainer
           width={viewport.width}
-          height={canvasHeight}
+          height={live2DHeight}
           idleMotionGroup="Idle"
         />
       </div>
