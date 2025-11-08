@@ -167,10 +167,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     writeCookie(CHAT_HISTORY_COOKIE, JSON.stringify(persisted));
   }, [messages]);
 
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
     const text = inputText.trim();
-    if (!text || isTyping) return;
+    if (!text) return;
 
     const userMessage: ChatMessage = {
       id: `${Date.now()}`,
@@ -181,6 +185,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
+    inputRef.current?.focus();
     setIsTyping(true);
 
     try {
@@ -284,9 +289,8 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
             value={inputText}
             onChange={(event) => setInputText(event.target.value)}
             placeholder="メッセージを入力..."
-            disabled={isTyping}
           />
-          <button type="submit" className="chat-send-button" disabled={isTyping || !inputText.trim()}>
+          <button type="submit" className="chat-send-button" disabled={!inputText.trim()}>
             送信
           </button>
         </form>

@@ -82,7 +82,9 @@ export default function CharacterView({ character: _character, user: _user }: Ch
 
           <div className="character-overlay-body">
             {activeTab === 'chat' ? (
-              <ChatInterface userName={displayName} character={_character} />
+              <div className="character-chat-container">
+                <ChatInterface userName={displayName} character={_character} />
+              </div>
             ) : (
               <div className="character-affinity-panel">
                 <p className="character-affinity-intro">最近の会話でキャラクターの心が温まっています。</p>
