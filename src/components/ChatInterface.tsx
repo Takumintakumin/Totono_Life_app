@@ -40,6 +40,7 @@ const CHAT_HISTORY_COOKIE = 'totono_chat_history';
 const CHAT_AFFINITY_COOKIE = 'totono_affinity';
 const COOKIE_MAX_DAYS = 30;
 const MAX_STORED_MESSAGES = 6;
+const CHAT_HINT_DISMISSED = 'totono_chat_hint_dismissed';
 
 const THEME_LABELS: Record<Character['theme'], string> = {
   plant: '植物',
@@ -132,6 +133,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showQuickHint, setShowQuickHint] = useState(false);
 
   const themeLabel = useMemo(() => THEME_LABELS[character.theme] ?? 'キャラクター', [character.theme]);
 
@@ -169,6 +171,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const dismissed = localStorage.getItem(CHAT_HINT_DISMISSED);
+    setShowQuickHint(!dismissed);
   }, []);
 
   const handleSend = async (event: React.FormEvent) => {
@@ -240,6 +250,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     }
   };
 
+  const dismissHint = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CHAT_HINT_DISMISSED, 'true');
+    }
+    setShowQuickHint(false);
+    inputRef.current?.focus();
+  };
+
   return (
     <div className="chat-interface">
       <div className="chat-header">
@@ -252,10 +270,29 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
           <span className="chat-badge">進化段階 {character.evolutionStage}</span>
           <span className="chat-meta-entry">{lastActiveLabel}</span>
         </div>
+        {showQuickHint && (
+          <button type="button" className="chat-hint-pill" onClick={dismissHint}>
+            ヒントを閉じる
+            <span aria-hidden="true">✕</span>
+          </button>
+        )}
       </div>
 
       <div className="chat-body">
         <div className="chat-messages">
+          {showQuickHint && (
+            <div className="chat-tip-banner">
+              <span>ちょっとした出来事や気持ちを共有すると、会話が自然に続きます。</span>
+              <button
+                type="button"
+                className="chat-tip-close"
+                onClick={dismissHint}
+                aria-label="ヒントを閉じる"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           {messages.map((message) => (
             <div key={message.id} className={`chat-message ${message.sender}`}>
               <div className="chat-message-content">{message.text}</div>
@@ -294,10 +331,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
             送信
           </button>
         </form>
-      </div>
-
-      <div className="chat-footer-hint">
-        ちょっとした出来事や気持ちを共有すると、会話がもっと自然に続きます。
       </div>
     </div>
   );
