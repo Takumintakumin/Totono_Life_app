@@ -77,14 +77,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  min-height: clamp(240px, 48vh, 380px);
-  max-height: clamp(360px, 64vh, 440px);
+  min-height: clamp(240px, 40vh, 360px);
+  max-height: clamp(360px, 55vh, 400px);
 }
 
 .character-chat-container {
   flex: 1;
   display: flex;
-  min-height: clamp(220px, 44vh, 340px);
+  min-height: clamp(200px, 32vh, 310px);
 }
 
 .character-chat-container .chat-interface {
@@ -142,7 +142,7 @@
   }
 
 .character-canvas > .live2d-character {
-  height: 100%;
+  height: calc(100% + 80px);
   width: auto;
   max-width: 100%;
   transform-origin: top center;
@@ -167,11 +167,11 @@
   }
 
   .character-overlay-body {
-    min-height: clamp(220px, 55vh, 360px);
-    max-height: clamp(320px, 70vh, 420px);
+    min-height: clamp(220px, 48vh, 340px);
+    max-height: clamp(320px, 60vh, 380px);
   }
 
   .character-chat-container {
-    min-height: clamp(210px, 52vh, 320px);
+    min-height: clamp(200px, 40vh, 300px);
   }
 }
