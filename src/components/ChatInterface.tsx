@@ -323,6 +323,16 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
             onChange={(event) => setInputText(event.target.value)}
             placeholder="メッセージを入力..."
           />
+          <button
+            type="button"
+            className="chat-voice-button"
+            onClick={() => {
+              alert('音声入力はまだ準備中です。');
+            }}
+            aria-label="音声入力"
+          >
+            🎤
+          </button>
           <button type="submit" className="chat-send-button" disabled={!inputText.trim()}>
             送信
           </button>
