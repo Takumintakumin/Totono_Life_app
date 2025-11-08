@@ -4,10 +4,19 @@
   align-items: center;
   justify-content: flex-start;
   height: calc(100vh - var(--nav-height));
+  min-height: calc(100vh - var(--nav-height));
   width: 100%;
-  padding: 0.6rem 0 0.8rem;
+  padding: 0.6rem 0 calc(0.8rem + env(safe-area-inset-bottom, 0px));
   gap: 0.55rem;
-  overflow: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@supports (height: 100dvh) {
+  .character-view-fullscreen {
+    height: calc(100dvh - var(--nav-height));
+    min-height: calc(100dvh - var(--nav-height));
+  }
 }
 
 .character-overlay-wrapper {
@@ -77,14 +86,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  min-height: clamp(240px, 40vh, 360px);
-  max-height: clamp(360px, 55vh, 400px);
+  flex: 1 1 auto;
+  min-height: clamp(220px, 40vh, 360px);
+  max-height: none;
+  overflow-y: auto;
 }
 
 .character-chat-container {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
-  min-height: clamp(200px, 32vh, 310px);
+  min-height: clamp(200px, 32vh, 300px);
 }
 
 .character-chat-container .chat-interface {
@@ -97,7 +108,7 @@
   gap: 0.6rem;
   font-size: 0.88rem;
   color: rgba(47, 59, 89, 0.85);
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   padding-right: 0.15rem;
 }
@@ -133,7 +144,7 @@
 
 
 .character-canvas {
-  flex: 1;
+  flex: 1 0 auto;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -168,7 +179,6 @@
 
   .character-overlay-body {
     min-height: clamp(220px, 48vh, 340px);
-    max-height: clamp(320px, 60vh, 380px);
   }
 
   .character-chat-container {
