@@ -170,11 +170,20 @@ export default function Live2DCharacter({
           currentApp.renderer.resize(containerWidth, containerHeight);
 
           const { nativeWidth: storedNativeWidth, nativeHeight: storedNativeHeight } = modelDimensionsRef.current;
+          const standaloneMql = window.matchMedia?.('(display-mode: standalone)');
+          const navigatorStandalone =
+            typeof navigator !== 'undefined' &&
+            Boolean((navigator as unknown as { standalone?: boolean }).standalone);
+          const isStandaloneDisplay = Boolean(standaloneMql?.matches || navigatorStandalone);
           const layout = calculateResponsiveLayout({
             containerWidth,
             containerHeight,
             nativeWidth: storedNativeWidth,
             nativeHeight: storedNativeHeight,
+            context: {
+              isStandalone: Boolean(isStandaloneDisplay),
+              viewportHeight: window.innerHeight,
+            },
           });
 
           if (typeof currentModel.scale === 'object' && 'set' in currentModel.scale) {
@@ -580,26 +589,57 @@ function calculateResponsiveLayout({
   containerHeight,
   nativeWidth,
   nativeHeight,
+  context = {},
 }: {
   containerWidth: number;
   containerHeight: number;
   nativeWidth: number;
   nativeHeight: number;
+  context?: {
+    isStandalone?: boolean;
+    viewportHeight?: number;
+  };
 }) {
   const isNarrow = containerWidth <= 520;
+  const isStandalone = Boolean(context.isStandalone);
+  const viewportHeight = context.viewportHeight ?? containerHeight;
+  const heightCategory = containerHeight <= 600 ? 'compact' : containerHeight <= 720 ? 'regular' : 'roomy';
+
   const availableWidth = containerWidth;
-  const availableHeight = containerHeight * (isNarrow ? 0.38 : 0.46);
+  const baseHeightFactor = isNarrow ? 0.38 : 0.46;
+  const compactHeightFactorAdjustment =
+    heightCategory === 'compact' ? (isStandalone ? -0.06 : -0.04) : heightCategory === 'regular' ? (isStandalone ? -0.03 : -0.015) : 0;
+  const availableHeight = containerHeight * (baseHeightFactor + compactHeightFactorAdjustment);
 
   const rawScale = Math.min(availableWidth / nativeWidth, availableHeight / nativeHeight);
-  const scaleMultiplier = isNarrow ? 0.03 : 0.036;
-  const minScale = isNarrow ? 0.015 : 0.017;
-  const maxScale = isNarrow ? 0.038 : 0.043;
-  const scale = clampValue(rawScale * scaleMultiplier, minScale, maxScale);
+  const baseScaleMultiplier = isNarrow ? 0.03 : 0.036;
+  const baseMinScale = isNarrow ? 0.015 : 0.017;
+  const baseMaxScale = isNarrow ? 0.038 : 0.043;
+  const scaleCompensation =
+    heightCategory === 'compact'
+      ? isStandalone
+        ? 0.8
+        : 0.87
+      : heightCategory === 'regular'
+        ? isStandalone
+          ? 0.9
+          : 0.94
+        : 1;
+  const scale = clampValue(rawScale * baseScaleMultiplier * scaleCompensation, baseMinScale * 0.9, baseMaxScale);
 
   const centimeterPx = 37.7952755906;
-  const topMarginPx = containerHeight * (isNarrow ? 0.16 : 0.11);
-  const baseBottomMarginPx = containerHeight * (isNarrow ? 0.14 : 0.125);
-  const bottomMarginPx = Math.max(baseBottomMarginPx - centimeterPx * 0.35, containerHeight * 0.055);
+  const topMarginBase = isNarrow ? 0.16 : 0.11;
+  const bottomMarginBase = isNarrow ? 0.14 : 0.125;
+  const categoryTopBoost = heightCategory === 'compact' ? 0.04 : heightCategory === 'regular' ? 0.02 : 0;
+  const categoryBottomBoost = heightCategory === 'compact' ? 0.06 : heightCategory === 'regular' ? 0.03 : 0;
+  const standaloneBottomBoost = isStandalone ? 0.035 : 0;
+  const viewportDiscrepancy = Math.max(0, viewportHeight - containerHeight);
+  const topMarginPx = containerHeight * (topMarginBase + categoryTopBoost);
+  const baseBottomMarginPx = containerHeight * (bottomMarginBase + categoryBottomBoost + standaloneBottomBoost);
+  const bottomMarginPx = Math.max(
+    baseBottomMarginPx - centimeterPx * 0.35,
+    containerHeight * (0.055 + categoryBottomBoost) + viewportDiscrepancy * 0.12,
+  );
 
   const posX = containerWidth / 2;
   const modelHeight = nativeHeight * scale;
