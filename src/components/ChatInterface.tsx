@@ -66,6 +66,11 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     return Math.min(1, Math.max(0, character.experience / character.experienceToNext));
   }, [character.experience, character.experienceToNext]);
 
+  const experiencePercent = useMemo(
+    () => Math.round(clamp(experienceRatio, 0, 1) * 100),
+    [experienceRatio]
+  );
+
   const baseAffinity = useMemo(
     () => calculateAffinity(character.level, experienceRatio, 0),
     [character.level, experienceRatio]
@@ -233,14 +238,32 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
   return (
     <div className="chat-interface">
       <div className="chat-affinity">
-        <div className="chat-affinity-header">
-          <span className="chat-affinity-label">なつき度</span>
-          <span className={`chat-affinity-tier chat-affinity-tier-${affinityDescriptor.tier}`}>
-            {affinityDescriptor.label}
-          </span>
+        <div className="chat-affinity-info">
+          <div className="chat-affinity-header">
+            <span className="chat-affinity-label">なつき度</span>
+            <span className={`chat-affinity-tier chat-affinity-tier-${affinityDescriptor.tier}`}>
+              {affinityDescriptor.label}
+            </span>
+          </div>
+          <div className="chat-affinity-progress">
+            <div className="chat-affinity-progress-track" aria-hidden="true">
+              <div
+                className="chat-affinity-progress-fill"
+                style={{ width: `${experiencePercent}%` }}
+              />
+            </div>
+            <span className="chat-affinity-progress-text">
+              次のレベルまであと <strong>{Math.max(0, 100 - experiencePercent)}%</strong>
+            </span>
+          </div>
         </div>
-        <div className="chat-affinity-score">{affinity}</div>
-        <div className="chat-affinity-tagline">{affinityDescriptor.tagline}</div>
+        <div className="chat-affinity-score-block" aria-label={`なつき度 ${affinity} ポイント`}>
+          <span className="chat-affinity-score">{affinity}</span>
+          <span className="chat-affinity-score-suffix">pt</span>
+        </div>
+        <div className="chat-affinity-tagline" title={affinityDescriptor.tagline}>
+          {affinityDescriptor.tagline}
+        </div>
       </div>
 
       <div className="chat-messages">
