@@ -170,10 +170,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
   }, [messages]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }

@@ -76,14 +76,14 @@
 .character-overlay-body {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  height: clamp(210px, 40vh, 360px);
+  gap: 0.6rem;
+  height: clamp(190px, 36vh, 320px);
 }
 
 .character-chat-container {
   flex: 1;
   display: flex;
-  min-height: clamp(180px, 34vh, 320px);
+  min-height: clamp(160px, 30vh, 280px);
 }
 
 .character-chat-container .chat-interface {
@@ -166,10 +166,10 @@
   }
 
   .character-overlay-body {
-    height: clamp(190px, 48vh, 300px);
+    height: clamp(170px, 44vh, 280px);
   }
 
   .character-chat-container {
-    min-height: clamp(170px, 44vh, 280px);
+    min-height: clamp(150px, 40vh, 260px);
   }
 }
