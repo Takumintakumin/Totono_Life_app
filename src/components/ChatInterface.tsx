@@ -66,11 +66,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     return Math.min(1, Math.max(0, character.experience / character.experienceToNext));
   }, [character.experience, character.experienceToNext]);
 
-  const experiencePercent = useMemo(
-    () => Math.round(clamp(experienceRatio, 0, 1) * 100),
-    [experienceRatio]
-  );
-
   const baseAffinity = useMemo(
     () => calculateAffinity(character.level, experienceRatio, 0),
     [character.level, experienceRatio]
@@ -120,16 +115,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       return cookieState.messages;
     }
     return [
-    {
+      {
         id: 'initial',
         text: buildInitialGreeting(userName, initialDescriptor),
-      sender: 'character',
-      timestamp: new Date(),
-    },
+        sender: 'character',
+        timestamp: new Date(),
+      },
     ];
   });
-  const [affinity, setAffinity] = useState(cookieState.affinity ?? baseAffinity);
-  const [affinityDescriptor, setAffinityDescriptor] = useState<AffinityDescriptor>(initialDescriptor);
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -137,17 +130,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
-
-  useEffect(() => {
-    if (cookieState.affinity == null) {
-      setAffinity(baseAffinity);
-      setAffinityDescriptor(describeAffinity(baseAffinity));
-    }
-  }, [baseAffinity, cookieState.affinity]);
-
-  useEffect(() => {
-    setAffinityDescriptor(describeAffinity(affinity));
-  }, [affinity]);
 
   useEffect(() => {
     const persisted: PersistedMessage[] = messages
@@ -160,10 +142,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       }));
     writeCookie(CHAT_HISTORY_COOKIE, JSON.stringify(persisted));
   }, [messages]);
-
-  useEffect(() => {
-    writeCookie(CHAT_AFFINITY_COOKIE, affinity.toString());
-  }, [affinity]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -205,9 +183,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       }
 
       const data = (await response.json()) as ChatApiResponse;
-      const updatedDescriptor = describeAffinity(data.affinity);
-      setAffinity(data.affinity);
-      setAffinityDescriptor(updatedDescriptor);
+      writeCookie(CHAT_AFFINITY_COOKIE, data.affinity.toString());
 
       const composedReply = data.followUp && data.followUp.trim().length > 0
         ? `${data.reply}\n${data.followUp}`
@@ -237,35 +213,6 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
   return (
     <div className="chat-interface">
-      <div className="chat-affinity">
-        <div className="chat-affinity-info">
-          <div className="chat-affinity-header">
-            <span className="chat-affinity-label">なつき度</span>
-            <span className={`chat-affinity-tier chat-affinity-tier-${affinityDescriptor.tier}`}>
-              {affinityDescriptor.label}
-            </span>
-          </div>
-          <div className="chat-affinity-progress">
-            <div className="chat-affinity-progress-track" aria-hidden="true">
-              <div
-                className="chat-affinity-progress-fill"
-                style={{ width: `${experiencePercent}%` }}
-              />
-            </div>
-            <span className="chat-affinity-progress-text">
-              次のレベルまであと <strong>{Math.max(0, 100 - experiencePercent)}%</strong>
-            </span>
-          </div>
-        </div>
-        <div className="chat-affinity-score-block" aria-label={`なつき度 ${affinity} ポイント`}>
-          <span className="chat-affinity-score">{affinity}</span>
-          <span className="chat-affinity-score-suffix">pt</span>
-        </div>
-        <div className="chat-affinity-tagline" title={affinityDescriptor.tagline}>
-          {affinityDescriptor.tagline}
-        </div>
-      </div>
-
       <div className="chat-messages">
         {messages.map((message) => (
           <div key={message.id} className={`chat-message ${message.sender}`}>
