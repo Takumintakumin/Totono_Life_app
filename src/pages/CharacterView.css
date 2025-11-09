@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  padding: 0.4rem 0 calc(0.8rem + env(safe-area-inset-bottom, 0px));
-  gap: 0.55rem;
+  padding: 0.2rem 0 calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  gap: 0.3rem;
   overflow: hidden;
 }
 
