@@ -625,7 +625,12 @@ function calculateResponsiveLayout({
           ? 0.86
           : 0.9
         : 1;
-  const scale = clampValue(rawScale * baseScaleMultiplier * scaleCompensation, baseMinScale * 0.9, baseMaxScale);
+  const globalScaleAdjustment = 0.95;
+  const scale = clampValue(
+    rawScale * baseScaleMultiplier * scaleCompensation * globalScaleAdjustment,
+    baseMinScale * 0.9,
+    baseMaxScale * globalScaleAdjustment,
+  );
 
   const centimeterPx = 37.7952755906;
   const topMarginBase = isNarrow ? 0.16 : 0.11;
