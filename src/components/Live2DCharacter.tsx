@@ -618,12 +618,12 @@ function calculateResponsiveLayout({
   const scaleCompensation =
     heightCategory === 'compact'
       ? isStandalone
-        ? 0.78
-        : 0.84
+        ? 0.75
+        : 0.82
       : heightCategory === 'regular'
         ? isStandalone
-          ? 0.88
-          : 0.92
+          ? 0.86
+          : 0.9
         : 1;
   const scale = clampValue(rawScale * baseScaleMultiplier * scaleCompensation, baseMinScale * 0.9, baseMaxScale);
 
@@ -637,8 +637,8 @@ function calculateResponsiveLayout({
   const topMarginPx = containerHeight * (topMarginBase + categoryTopBoost);
   const baseBottomMarginPx = containerHeight * (bottomMarginBase + categoryBottomBoost + standaloneBottomBoost);
   const bottomMarginPx = Math.max(
-    baseBottomMarginPx - centimeterPx * 0.22,
-    containerHeight * (0.075 + categoryBottomBoost) + viewportDiscrepancy * 0.16,
+    baseBottomMarginPx - centimeterPx * 0.18,
+    containerHeight * (0.085 + categoryBottomBoost) + viewportDiscrepancy * 0.18,
   );
 
   const posX = containerWidth / 2;
