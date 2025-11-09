@@ -189,7 +189,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
-    inputRef.current?.focus();
+    inputRef.current?.blur?.();
     setIsTyping(true);
 
     try {
