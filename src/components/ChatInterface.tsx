@@ -257,7 +257,9 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       <div className="chat-header">
         <div className="chat-header-main">
           <span className="chat-title">💬 おしゃべり</span>
-          <span className="chat-subtitle">{themeLabel}タイプの相棒と会話を楽しもう</span>
+          <span className="chat-subtitle">
+            {themeLabel}タイプの相棒と、物語みたいな会話を紡いでみよう
+          </span>
         </div>
         <div className="chat-header-meta">
           <span className="chat-badge">Lv {character.level}</span>
