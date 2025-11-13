@@ -49,9 +49,9 @@ export default function CharacterView({ character: _character, user: _user }: Ch
   const layoutGap = viewport.width <= 520 ? 8 : 12;
 
   const chatAreaHeight = useMemo(() => {
-    const ratio = viewport.width <= 520 ? 0.62 : 0.5;
+    const ratio = viewport.width <= 520 ? 0.68 : 0.54;
     const minHeight = 340;
-    const maxHeight = Math.max(minHeight, viewport.height - 220);
+    const maxHeight = Math.max(minHeight, viewport.height - 200);
     const tentative = viewport.height * ratio;
     return Math.min(Math.max(tentative, minHeight), maxHeight);
   }, [viewport.height, viewport.width]);

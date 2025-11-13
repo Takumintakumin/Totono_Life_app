@@ -396,7 +396,8 @@
   }
 
   .chat-interface {
-    max-height: 280px;
+    max-height: none;
+    min-height: 260px;
   }
 
   .chat-message {
