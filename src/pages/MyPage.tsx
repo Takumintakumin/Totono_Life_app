@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import AvatarBuilder from '../components/AvatarBuilder';
-import { AppData, AvatarConfig, UserProfile } from '../types';
+import { AppData, UserProfile } from '../types';
 import { peekUserId, updateUserProfile } from '../utils/api';
 
 interface MyPageProps {
@@ -14,7 +13,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
 
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [email, setEmail] = useState(user.email || '');
-  const [avatar, setAvatar] = useState<AvatarConfig>(user.avatar);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +23,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   const [eveningRoutines, setEveningRoutines] = useState(data.defaultEveningRoutines);
   const [morningTime, setMorningTime] = useState(data.settings.morningNotificationTime);
   const [eveningTime, setEveningTime] = useState(data.settings.eveningNotificationTime);
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   useEffect(() => {
     setDisplayName(user.displayName || '');
@@ -34,10 +31,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
   useEffect(() => {
     setEmail(user.email || '');
   }, [user.email]);
-
-  useEffect(() => {
-    setAvatar(user.avatar);
-  }, [user.avatar]);
 
   useEffect(() => {
     setMorningRoutines(data.defaultMorningRoutines);
@@ -86,19 +79,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
     };
   }, [morningTime, eveningTime]);
 
-  const templates: Record<'morning' | 'evening', string[][]> = {
-    morning: [
-      ['水を飲む', 'ストレッチ', '朝日を浴びる'],
-      ['ベッドメイキング', '瞑想', '軽く散歩'],
-      ['日記を書く', '今日のタスク確認', '深呼吸']
-    ],
-    evening: [
-      ['夕食後の片付け', '明日の準備', 'ストレッチ'],
-      ['湯船につかる', '読書', 'スマホを手放す'],
-      ['今日を振り返る', '感謝を書く', '就寝準備']
-    ],
-  };
-
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!displayName.trim()) {
@@ -112,7 +92,7 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       const updatedUser = await updateUserProfile({
         displayName: displayName.trim(),
         email: email.trim(),
-        avatar,
+        avatar: user.avatar,
       });
       updateData((prev) => ({
         ...prev,
@@ -220,30 +200,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
     setTimeout(() => setMessage(null), 2000);
   };
 
-  const applyTemplate = (type: 'morning' | 'evening', index: number) => {
-    const template = templates[type][index];
-    if (type === 'morning') {
-      setMorningRoutines(template);
-    } else {
-      setEveningRoutines(template);
-    }
-    setSelectedTemplate(`${type}-${index}`);
-    setMessage(`${type === 'morning' ? '朝' : '夜'}のテンプレートを適用しました！`);
-    setTimeout(() => setMessage(null), 2000);
-  };
-
-  const changeTheme = (theme: 'plant' | 'animal' | 'robot') => {
-    updateData((prev) => ({
-      ...prev,
-      character: {
-        ...prev.character,
-        theme,
-      },
-    }));
-    setMessage('キャラクターテーマを変更しました！');
-    setTimeout(() => setMessage(null), 2000);
-  };
-
   const addMorningRoutine = () => {
     setMorningRoutines([...morningRoutines, '']);
   };
@@ -309,12 +265,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
               placeholder="example@totono.life"
             />
           </label>
-          <section style={{ marginTop: '2rem' }}>
-            <h2 className="card-title" style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>
-              🎨 アバター
-            </h2>
-            <AvatarBuilder value={avatar} onChange={setAvatar} />
-          </section>
 
           {message && (
             <div className="bonus-message" style={{ marginTop: '1rem' }}>
@@ -337,38 +287,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
       {/* ルーティン設定セクション */}
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h2 className="card-title" style={{ fontSize: '1.25rem' }}>⚙️ ルーティン設定</h2>
-
-        <div className="settings-section">
-          <h3 className="settings-title">習慣テンプレート</h3>
-          <div className="template-grid">
-            <div className="template-column">
-              <div className="template-heading">朝</div>
-              {templates.morning.map((template, index) => (
-                <button
-                  key={`morning-template-${index}`}
-                  type="button"
-                  className={`template-button ${selectedTemplate === `morning-${index}` ? 'selected' : ''}`}
-                  onClick={() => applyTemplate('morning', index)}
-                >
-                  {template.join(' ・ ')}
-                </button>
-              ))}
-            </div>
-            <div className="template-column">
-              <div className="template-heading">夜</div>
-              {templates.evening.map((template, index) => (
-                <button
-                  key={`evening-template-${index}`}
-                  type="button"
-                  className={`template-button ${selectedTemplate === `evening-${index}` ? 'selected' : ''}`}
-                  onClick={() => applyTemplate('evening', index)}
-                >
-                  {template.join(' ・ ')}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
 
         <div className="settings-section">
           <h3 className="settings-title">朝ルーティン</h3>
@@ -475,35 +393,6 @@ export default function MyPage({ data, updateData, onProfileUpdated }: MyPagePro
         </div>
       </div>
 
-      {/* キャラクターテーマセクション */}
-      <div className="card" style={{ marginTop: '1.5rem' }}>
-        <h2 className="card-title" style={{ fontSize: '1.25rem' }}>🎨 キャラクターテーマ</h2>
-        <div className="settings-section">
-          <div className="theme-selector">
-            <button
-              className={`theme-button ${data.character.theme === 'plant' ? 'selected' : ''}`}
-              onClick={() => changeTheme('plant')}
-            >
-              🌱
-              <span className="theme-label">植物系</span>
-            </button>
-            <button
-              className={`theme-button ${data.character.theme === 'animal' ? 'selected' : ''}`}
-              onClick={() => changeTheme('animal')}
-            >
-              🐾
-              <span className="theme-label">動物系</span>
-            </button>
-            <button
-              className={`theme-button ${data.character.theme === 'robot' ? 'selected' : ''}`}
-              onClick={() => changeTheme('robot')}
-            >
-              🤖
-              <span className="theme-label">ロボット系</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
