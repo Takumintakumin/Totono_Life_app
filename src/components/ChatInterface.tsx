@@ -787,6 +787,27 @@ function formatWithTopics(template: string, topics: string | null): string {
   return template.replace('{TOPIC}', topics);
 }
 
+const SENTENCE_END_REGEX = /[。！？!?♪…）)]$/;
+
+function ensureSentenceEnding(line: string): string {
+  const trimmed = line.trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (SENTENCE_END_REGEX.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed}。`;
+}
+
+function combineSentences(parts: string[]): string {
+  return parts
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .map(ensureSentenceEnding)
+    .join('');
+}
+
 function loadConversationMemory(): ChatMemoryEntry[] {
   if (typeof window === 'undefined') {
     return [];
@@ -940,7 +961,7 @@ function composeIdlePrompt(
     }
   })();
 
-  return [basePrompt, memoryLine, affectionateTail, themeFlavor].filter(Boolean).join(' ');
+  return combineSentences([basePrompt, memoryLine, affectionateTail, themeFlavor]);
 }
 
 function generateLocalReply(
@@ -957,9 +978,18 @@ function generateLocalReply(
       ? `「${trimmedUserText.slice(0, 24)}${trimmedUserText.length > 24 ? '…' : ''}」`
       : '';
 
-  const acknowledgement = quotedUserText
-    ? `${persona.secondPerson}の言葉 ${quotedUserText}、${persona.firstPerson}は大切に受け取ったよ。`
-    : '';
+  const acknowledgementTemplates =
+    persona.secondPerson === 'あなた'
+      ? [
+          `あなたが教えてくれた${quotedUserText}、ちゃんと胸にしまっておくね`,
+          `${quotedUserText}って言葉、とても響いたよ`,
+        ]
+      : [
+          `${persona.secondPerson}が話してくれた${quotedUserText}、しっかり覚えておくからね`,
+          `${quotedUserText}って聞けて、とても嬉しかったよ`,
+        ];
+  const acknowledgement =
+    quotedUserText && acknowledgementTemplates.length > 0 ? pickRandom(acknowledgementTemplates) ?? '' : '';
 
   const opener = pickRandom(persona.openers) ?? descriptor.tagline;
   const moodPool =
@@ -990,8 +1020,7 @@ function generateLocalReply(
 
   const closing = pickRandom(persona.closings) ?? descriptor.tagline;
 
-  const lines = [acknowledgement, opener, moodLine, memoryLine, themeFlavor, closing].filter(Boolean);
-  return lines.join(' ');
+  return combineSentences([acknowledgement, opener, moodLine, memoryLine, themeFlavor, closing]);
 }
 
 function clamp(value: number, min: number, max: number) {
