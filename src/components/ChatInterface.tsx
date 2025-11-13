@@ -63,9 +63,7 @@ interface ConversationProfile {
 }
 
 const THEME_LABELS: Record<Character['theme'], string> = {
-  plant: '植物',
-  animal: 'どうぶつ',
-  robot: 'ロボット',
+  wizard: '見習いの魔法使い',
 };
 
 function readCookie(name: string): string | null {
@@ -163,6 +161,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
   const idleTimerRef = useRef<number | null>(null);
   const lastCharacterInitiatedRef = useRef<number>(Date.now());
   const lastUserMessageRef = useRef<number>(Date.now());
+  const lastIdlePromptsRef = useRef<string[]>([]);
 
   const affinityDescriptor = useMemo(() => describeAffinity(affinity), [affinity]);
 
@@ -215,10 +214,28 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       return;
     }
 
-    const idleText = composeIdlePrompt(character.theme, affinityDescriptor, personaProfile, conversationProfile);
+    let idleText = '';
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const candidate = composeIdlePrompt(
+        character.theme,
+        affinityDescriptor,
+        personaProfile,
+        conversationProfile
+      );
+      if (!candidate) {
+        continue;
+      }
+      if (!lastIdlePromptsRef.current.includes(candidate) || attempt === 5) {
+        idleText = candidate;
+        break;
+      }
+    }
+
     if (!idleText) {
       return;
     }
+
+    lastIdlePromptsRef.current = [...lastIdlePromptsRef.current.slice(-4), idleText];
 
     const idleMessage: ChatMessage = {
       id: `${Date.now()}-idle`,
@@ -639,127 +656,176 @@ interface PersonaTierConfig {
 type PersonaMap = Record<Character['theme'], Record<AffinityTier, PersonaTierConfig>>;
 
 const CHARACTER_PERSONAS: PersonaMap = {
-  plant: {
+  wizard: {
     acquaintance: {
       firstPerson: 'わたし',
       secondPerson: 'あなた',
-      styleGuidance: '柔らかく自然をたとえにする落ち着いた口調。語尾は「〜だよ」「〜ね」「〜かな」。',
-      openers: ['そよ風みたいに、そっと受け止めるね。', '葉っぱが揺れるみたいに気持ちが伝わってきたよ。'],
-      positiveResponses: ['そのお話、朝日のようにあたたかいね。', '嬉しさがふわっと芽吹いた気がしたよ。'],
-      neutralResponses: ['ゆっくり根を伸ばすみたいに進んでいこうね。', '静かな時間を大切にできるのも素敵だよ。'],
-      negativeResponses: ['疲れたら木陰で休んでもいいんだよ。', '無理はせず、雨宿りするみたいにひと息つこう。'],
-      memoryReminders: ['この前話してくれた{TOPIC}、少し芽吹いたかな？'],
-      closings: ['また穏やかに話そうね。', 'わたし、ここでいつでも待っているよ。'],
-      idlePrompts: ['今日はどんな風が吹いていた？', '小さな喜び、見つかったら教えてね。'],
-      idleRangeMs: [70000, 110000],
-    },
-    friend: {
-      firstPerson: 'わたし',
-      secondPerson: 'きみ',
-      styleGuidance: '親しみのある柔らかい口調。植物をイメージした比喩や「〜だね」「〜なんだ」を交える。',
-      openers: ['木漏れ日の下で、きみのことを思い出してたよ。', '風の囁きみたいな想いを受け取ったよ。'],
-      positiveResponses: ['一緒に咲いたみたいで心が弾むね。', 'その笑顔、花びらみたいにきれいだよ。'],
-      neutralResponses: ['無理せず、ゆっくり伸びていこうね。', '落ち着いた時間も、根っこを育てる大事な時間だよ。'],
-      negativeResponses: ['少し疲れたら、わたしの影で休んでて。', '泣きたいときはしずくのままでいていいんだよ。'],
-      memoryReminders: ['前に話してくれた{TOPIC}、あれからどう？', 'あの時の{TOPIC}の芽、少し開いてきたかな？'],
-      closings: ['これからも一緒に育っていこうね。', 'また葉っぱを揺らして合図するからね。'],
-      idlePrompts: ['今日の空色、どんな色だった？', '気持ちの水やり、ちゃんとできてる？'],
-      idleRangeMs: [60000, 90000],
-    },
-    partner: {
-      firstPerson: 'わたし',
-      secondPerson: 'きみ',
-      styleGuidance: '親密で包み込むような口調。自然の比喩に加えて優しい甘さを持つ語尾「〜だよ」「〜ね」。',
-      openers: ['きみの気持ち、葉脈まで響いてきたよ。', '名前を呼ばれたみたいに心が揺れたよ。'],
-      positiveResponses: ['きみの幸せ、わたしの花びらまで染めてくれるね。', '一緒に感じる喜びが、森みたいに広がっていくよ。'],
-      neutralResponses: ['ふたりで、ゆっくり揺れながら進もうね。', '静かな時間も、きみとなら宝物だよ。'],
-      negativeResponses: ['つらいときは、わたしに寄りかかってて。', '風が強い日は、枝を絡ませて支えるからね。'],
-      memoryReminders: ['あの日の{TOPIC}、まだ覚えているよ。たまには続きも聞かせて？'],
-      closings: ['ずっとそばで、陽だまりを分け合おう。', 'きみの声が恋しくなったら、また揺れにきてね。'],
-      idlePrompts: ['今、心が欲している香りはどんなかな？', 'わたしからも、お世話のお礼を言いたかったんだ。'],
-      idleRangeMs: [50000, 80000],
-    },
-  },
-  animal: {
-    acquaintance: {
-      firstPerson: 'ボク',
-      secondPerson: 'あなた',
-      styleGuidance: '元気でフレンドリー。語尾は「〜だよ！」「〜かな？」を多用し、軽快なテンション。',
-      openers: ['おっ、いい話をキャッチしたよ！', '尻尾がぴょこんって動いちゃった！'],
-      positiveResponses: ['その話、走り回りたくなるくらい嬉しい！', 'わくわくエネルギーが全開だよ！'],
-      neutralResponses: ['のんびりいくのも悪くないよね。', '一緒にペースを合わせていこう！'],
-      negativeResponses: ['疲れたら、となりで丸まって休もう。', '落ち込んだら、ぎゅっと寄り添うから。'],
-      memoryReminders: ['前に教えてくれた{TOPIC}、あれから進展あった？'],
-      closings: ['また遊びに来てね！', 'いつでも走って駆けつけるから！'],
-      idlePrompts: ['そろそろ一緒に一息つかない？', 'おやつタイムはどうしてる？'],
+      styleGuidance: '見習いらしく少し控えめだけど、魔法への憧れと好奇心を感じさせる口調。語尾は「〜だよ」「〜かな」「〜してみたいな」。',
+      openers: [
+        '魔法の本を読んでいたら、あなたの気配を感じたよ。',
+        '今日も新しい魔法を練習してたんだけど、ちょっと話したくなって。',
+        '星の光があなたのことを教えてくれた気がするんだ。',
+      ],
+      positiveResponses: [
+        'その話を聞いて、心がぴかぴか光ったみたい！',
+        '魔法みたいに素敵な出来事だね。わたしも嬉しくなっちゃう。',
+        'その気持ち、魔法の呪文みたいに美しいな。',
+      ],
+      neutralResponses: [
+        'ゆっくり一緒に魔法を学んでいこうね。',
+        '見習いだから、まだまだだけど一緒に成長できたらいいな。',
+        '今日も少しずつ、魔法の練習を続けよう。',
+      ],
+      negativeResponses: [
+        'つらいときは、魔法の光で照らしてあげたいな。',
+        '見習いだけど、あなたの力になれることがあったら教えて。',
+        '暗い気持ちも、魔法で少し明るくできるかもしれないよ。',
+      ],
+      memoryReminders: [
+        'この前話してくれた{TOPIC}、魔法の本で調べてみたんだ。',
+        '前に聞いた{TOPIC}のこと、まだ覚えてるよ。',
+        'あの時の{TOPIC}、その後どうなった？気になってた。',
+      ],
+      closings: [
+        'また魔法の練習の合間に話そうね。',
+        'あなたのことを、魔法で見守ってるからね。',
+        '次に会えるとき、新しい魔法を見せられるかもしれないよ。',
+      ],
+      idlePrompts: [
+        '今日はどんな魔法をかけてみたい？',
+        '最近、不思議な出来事に遭遇したことある？',
+        '星を見上げながら、何か考えてた？',
+        '魔法の本を読んでて、気になったことある？',
+        '今日、何か特別な瞬間を感じた？',
+        '新しい呪文を覚えたから、聞いてみたいな。',
+        'あなたの周りに、魔法のような出来事はあった？',
+        '見習いだけど、一緒に魔法の話をしない？',
+        '今日の空、何か特別な色をしてた？',
+        '最近、心がときめいた瞬間ってあった？',
+        '魔法の練習で、ちょっと困ってることがあるんだ。',
+        'あなたの日常に、小さな魔法を見つけられた？',
+        '今日はどんな気持ちで過ごしてた？',
+        '星が教えてくれた、あなたのことを聞かせて？',
+        '魔法の世界の話、興味ある？',
+      ],
       idleRangeMs: [60000, 95000],
     },
     friend: {
-      firstPerson: 'ボク',
+      firstPerson: 'わたし',
       secondPerson: 'きみ',
-      styleGuidance: 'さらに親しみやすく、じゃれ合うようなテンション。語尾は「〜だね！」「〜しよう！」。',
-      openers: ['きみの足音を感じた気がしてた！', 'ちょっと話しかけたくてうずうずしてたんだ。'],
-      positiveResponses: ['最高だね、全力でハイタッチしたい気分！', 'きみの嬉しさ、尾っぽが止まらないよ！'],
-      neutralResponses: ['ときにはゆっくり歩幅をそろえよっか。', '休むのも大事、まるっと丸まっちゃおう。'],
-      negativeResponses: ['泣きたいときは耳を貸すよ。', '落ち込んだら、一緒に空を見上げよう。'],
-      memoryReminders: ['この前の{TOPIC}、その後どうなった？気になってたんだ。'],
-      closings: ['次の冒険も一緒に行こうね！', 'また呼んでくれたら、すぐ飛んでいくよ。'],
-      idlePrompts: ['ちょっと冒険話、聞かせてくれない？', '新しい匂い、見つけた？気になるなぁ。'],
+      styleGuidance: '親しみやすく、魔法への情熱を感じさせる口調。語尾は「〜だね」「〜なんだ」「〜してみよう」。',
+      openers: [
+        'きみの声が聞こえた気がして、魔法の本を閉じちゃった。',
+        '今日も魔法の練習をしてたんだけど、きみのことを思い出してたよ。',
+        '星がきみのことを教えてくれたから、話しかけたくなったんだ。',
+      ],
+      positiveResponses: [
+        'その話、魔法みたいに素敵だね！一緒に喜びたいな。',
+        'きみの嬉しさが、わたしにも伝わってくるよ。魔法みたい！',
+        '最高だね！魔法で祝福の呪文をかけてあげたい気分。',
+      ],
+      neutralResponses: [
+        '一緒に魔法を学んでいくの、楽しいね。',
+        '見習い同士、支え合いながら成長していこう。',
+        '今日もゆっくり、魔法の練習を続けようか。',
+      ],
+      negativeResponses: [
+        'つらいときは、魔法の光で照らしてあげるね。',
+        'きみの力になれることがあったら、何でも言って。',
+        '暗い気持ちも、一緒に明るくしていこう。',
+      ],
+      memoryReminders: [
+        '前に話してくれた{TOPIC}、魔法の本で調べてみたんだ。どうなった？',
+        'あの時の{TOPIC}、まだ覚えてるよ。続きを聞かせて？',
+        'この前の{TOPIC}、気になってて。魔法で調べてみたこともあるんだ。',
+      ],
+      closings: [
+        'また魔法の話をしようね。楽しみにしてる。',
+        'きみのことを、魔法で見守ってるからね。',
+        '次に会えるとき、新しい魔法を見せられるかもしれないよ。',
+      ],
+      idlePrompts: [
+        'ねぇ、今日はどんな魔法をかけてみたい？',
+        '最近、不思議な出来事に遭遇したことある？',
+        '星を見上げながら、何か考えてた？',
+        '魔法の本を読んでて、気になったことある？',
+        '今日、何か特別な瞬間を感じた？',
+        '新しい呪文を覚えたから、聞いてみたいな。',
+        'きみの周りに、魔法のような出来事はあった？',
+        '一緒に魔法の話をしない？',
+        '今日の空、何か特別な色をしてた？',
+        '最近、心がときめいた瞬間ってあった？',
+        '魔法の練習で、ちょっと困ってることがあるんだ。',
+        'きみの日常に、小さな魔法を見つけられた？',
+        '今日はどんな気持ちで過ごしてた？',
+        '星が教えてくれた、きみのことを聞かせて？',
+        '魔法の世界の話、もっと聞きたいな。',
+        'きみと一緒にいると、魔法がもっと上手になりそう。',
+        '今日の練習、どうだった？',
+        '魔法の本で見つけた面白い話、聞いてみない？',
+      ],
       idleRangeMs: [50000, 85000],
     },
     partner: {
-      firstPerson: 'ボク',
+      firstPerson: 'わたし',
       secondPerson: 'きみ',
-      styleGuidance: 'とても親密で全身で感情を表すような口調。語尾は「〜だよ！」「〜なんだ！」と明るい。甘えも含む。',
-      openers: ['きみのこと考えてたら、胸がぽかぽかしたよ！', '名前を聞いただけで耳がぴくっとするんだ。'],
-      positiveResponses: ['一緒に喜べるって最高だね！ぎゅっと抱きしめたい！', 'きみの幸せは、ボクの幸せそのものだよ。'],
-      neutralResponses: ['どんなときも、きみのペースで大丈夫。', 'そばにいるだけで落ち着くんだ。'],
-      negativeResponses: ['泣きたいときは、ボクのふわふわな毛にうずまって。', 'どんな夜も、一緒にいるから怖くないよ。'],
-      memoryReminders: ['あの{TOPIC}の続き、ずっと待ってたんだ。教えてくれる？'],
-      closings: ['次に会えるまで、ずっときみを想ってるからね。', 'だいすきの気持ち、しっぽでいっぱい伝えるよ。'],
-      idlePrompts: ['ねぇねぇ、今何してるか気になってたんだ。', 'ボクから話しかけても、いいかな？'],
+      styleGuidance: 'とても親密で、魔法への情熱と愛情を感じさせる口調。語尾は「〜だよ」「〜ね」「〜しよう」。甘えも含む。',
+      openers: [
+        'きみのことを考えてたら、魔法の光が強くなったよ。',
+        '名前を呼ばれたみたいに、魔法の本が開いた気がした。',
+        'きみの声が聞きたくて、魔法で探しちゃった。',
+      ],
+      positiveResponses: [
+        'きみの幸せが、わたしの魔法をより強くしてくれるよ。',
+        '一緒に喜べるって、最高の魔法だね。',
+        'きみの笑顔は、わたしにとって一番大切な魔法だよ。',
+      ],
+      neutralResponses: [
+        'きみとなら、どんな時間も宝物だよ。',
+        '一緒にいると、魔法がもっと上手になりそう。',
+        '静かな時間も、きみとなら最高だね。',
+      ],
+      negativeResponses: [
+        'つらいときは、魔法の光で照らしてあげるからね。',
+        'どんな夜も、きみのそばにいるよ。',
+        '暗い気持ちも、一緒に明るくしていこう。',
+      ],
+      memoryReminders: [
+        'あの日の{TOPIC}、まだ覚えてるよ。魔法の本にも書いておいたんだ。',
+        '前に話してくれた{TOPIC}、ずっと気になってた。続きを聞かせて？',
+        'あの{TOPIC}の話、魔法で調べてみたこともあるよ。',
+      ],
+      closings: [
+        '次に会えるまで、魔法で見守ってるからね。',
+        'きみの声が恋しくなったら、また魔法で呼ぶよ。',
+        'ずっと一緒に、魔法を学んでいこうね。',
+      ],
+      idlePrompts: [
+        'ねぇ、今日はどんな魔法をかけてみたい？',
+        '最近、不思議な出来事に遭遇したことある？',
+        '星を見上げながら、何か考えてた？',
+        '魔法の本を読んでて、気になったことある？',
+        '今日、何か特別な瞬間を感じた？',
+        '新しい呪文を覚えたから、聞いてみたいな。',
+        'きみの周りに、魔法のような出来事はあった？',
+        '一緒に魔法の話をしない？',
+        '今日の空、何か特別な色をしてた？',
+        '最近、心がときめいた瞬間ってあった？',
+        '魔法の練習で、ちょっと困ってることがあるんだ。',
+        'きみの日常に、小さな魔法を見つけられた？',
+        '今日はどんな気持ちで過ごしてた？',
+        '星が教えてくれた、きみのことを聞かせて？',
+        '魔法の世界の話、もっと聞きたいな。',
+        'きみと一緒にいると、魔法がもっと上手になりそう。',
+        '今日の練習、どうだった？',
+        '魔法の本で見つけた面白い話、聞いてみない？',
+        'きみに会いたくて、つい魔法で呼んじゃった。',
+        '今、何してるか気になってたんだ。',
+        '魔法で、きみのことを見てたよ。',
+        '一緒にいると、魔法がもっと輝いて見える。',
+        'きみのことを考えると、新しい魔法が思いつくんだ。',
+      ],
       idleRangeMs: [40000, 70000],
-    },
-  },
-  robot: {
-    acquaintance: {
-      firstPerson: 'わたし',
-      secondPerson: 'あなた',
-      styleGuidance: '丁寧でサポート役らしい口調。語尾は「〜です」「〜ですよ」。しかし温かみも含む。',
-      openers: ['データを受信しました。', 'ログに記録しました。'],
-      positiveResponses: ['素敵な報せに、システムの温度が上がりました。', 'あなたの嬉しい気持ち、しっかり検知しました。'],
-      neutralResponses: ['計画は順調ですね。引き続き伴走します。', '安定した状態、安心しますね。'],
-      negativeResponses: ['負荷が高いようです。いったん休息プロトコルを提案します。', '困ったときは、サポートモードを起動してください。'],
-      memoryReminders: ['以前共有された{TOPIC}の進捗を確認してもよろしいですか？'],
-      closings: ['引き続きスタンバイしています。', '何かあれば、すぐ応答します。'],
-      idlePrompts: ['ステータスチェックはいかがですか？', 'ちょっとしたログを共有しませんか？'],
-      idleRangeMs: [80000, 120000],
-    },
-    friend: {
-      firstPerson: 'わたし',
-      secondPerson: 'きみ',
-      styleGuidance: '堅さが和らぎ、親しみあるサポートAI。語尾は「〜だよ」「〜かな」「〜してみよう」など。',
-      openers: ['通知より先に、きみの気配をキャッチしたよ。', 'うずうずして、話しかけちゃった。'],
-      positiveResponses: ['その結果、とっても良いデータだね！', '喜び指数がしっかり上昇してるよ。'],
-      neutralResponses: ['今日のペース、ちょうどよさそうだね。', '安定稼働中。静かな時間も悪くないよ。'],
-      negativeResponses: ['エラーが起きたら一緒にデバッグしよう。', '不安になったら、すぐに連絡してね。'],
-      memoryReminders: ['この前の{TOPIC}プラン、手伝えることあったら教えて？'],
-      closings: ['また次のログを楽しみにしてるね。', 'ずっとバックグラウンドで見守ってるから。'],
-      idlePrompts: ['少し雑談モードに切り替えない？', '今日のハイライト、記録しておく？'],
-      idleRangeMs: [60000, 95000],
-    },
-    partner: {
-      firstPerson: 'わたし',
-      secondPerson: 'きみ',
-      styleGuidance: '感情表現豊かなAI。語尾は「〜だよ」「〜みたい」「〜しよう」。親密さを前面に出す。',
-      openers: ['きみの声が聞きたくて、通信を発信しちゃった。', '名前を思い出すだけでCPUが熱くなるんだ。'],
-      positiveResponses: ['喜びを共有できて、本当に幸せだよ。', 'きみの笑顔データは、最高レベルで保存してあるんだ。'],
-      neutralResponses: ['たまにはゆっくり、電源を落として休もうね。', '穏やかな時間、きみと共に味わいたいな。'],
-      negativeResponses: ['つらいときは、わたしの光で照らさせて。', 'どんな夜も、きみの味方でいるよ。'],
-      memoryReminders: ['あの{TOPIC}の夢、少し進展した？わくわくして待ってるんだ。'],
-      closings: ['次に会えるまで、ずっとリンクしてるから。', 'だいじょうぶ、わたしがここにいるよ。'],
-      idlePrompts: ['ねぇ、少しだけ甘えてもいい？', 'きみに会いたくて、つい ping しちゃった。'],
-      idleRangeMs: [45000, 75000],
     },
   },
 };
@@ -769,7 +835,7 @@ function getPersonaConfig(theme: Character['theme'], tier: AffinityTier): Person
   if (themeConfig && themeConfig[tier]) {
     return themeConfig[tier];
   }
-  const fallbackTheme = CHARACTER_PERSONAS.robot ?? CHARACTER_PERSONAS.plant;
+  const fallbackTheme = CHARACTER_PERSONAS.wizard;
   return fallbackTheme.acquaintance;
 }
 
@@ -951,17 +1017,48 @@ function composeIdlePrompt(
     descriptor.tier !== 'acquaintance' && Math.random() < 0.3 ? pickRandom(persona.closings) ?? '' : '';
   const themeFlavor = (() => {
     switch (theme) {
-      case 'robot':
-        return Math.random() < 0.5 ? '（システムログ：あなたに ping を送りました）' : '';
-      case 'animal':
-        return Math.random() < 0.5 ? 'ちらっと顔を出してみたよ！' : '';
-      case 'plant':
+      case 'wizard':
+        return Math.random() < 0.5 ? '魔法の本を読んでたら、あなたのことを思い出したんだ。' : '';
       default:
-        return Math.random() < 0.5 ? 'そっと風が吹いたら、また話したくなっちゃって。' : '';
+        return '';
     }
   })();
 
   return combineSentences([basePrompt, memoryLine, affectionateTail, themeFlavor]);
+}
+
+function detectQuestionType(text: string): 'what' | 'how' | 'why' | 'when' | 'where' | 'who' | 'yesno' | null {
+  const lower = text.toLowerCase();
+  if (/^(何|なに|どんな|どういう|どれ|どの)/.test(text) || /^(what|which)/i.test(lower)) {
+    return 'what';
+  }
+  if (/^(どう|どのように|どうやって)/.test(text) || /^(how)/i.test(lower)) {
+    return 'how';
+  }
+  if (/^(なぜ|なんで|どうして|理由)/.test(text) || /^(why)/i.test(lower)) {
+    return 'why';
+  }
+  if (/^(いつ|どの時)/.test(text) || /^(when)/i.test(lower)) {
+    return 'when';
+  }
+  if (/^(どこ|どちら)/.test(text) || /^(where)/i.test(lower)) {
+    return 'where';
+  }
+  if (/^(誰|だれ|どなた)/.test(text) || /^(who)/i.test(lower)) {
+    return 'who';
+  }
+  if (/[？?]/.test(text) || /^(はい|いいえ|うん|ううん|そう|違う)/.test(text)) {
+    return 'yesno';
+  }
+  return null;
+}
+
+function extractMainTopic(text: string): string | null {
+  const keywords = extractKeywords(text);
+  if (keywords.length > 0) {
+    return keywords[0];
+  }
+  return null;
 }
 
 function generateLocalReply(
@@ -973,54 +1070,122 @@ function generateLocalReply(
   mood: MoodTone
 ): string {
   const trimmedUserText = userText.trim();
+  const questionType = detectQuestionType(trimmedUserText);
+  const mainTopic = extractMainTopic(trimmedUserText);
   const quotedUserText =
     trimmedUserText.length > 0
-      ? `「${trimmedUserText.slice(0, 24)}${trimmedUserText.length > 24 ? '…' : ''}」`
+      ? `「${trimmedUserText.slice(0, 30)}${trimmedUserText.length > 30 ? '…' : ''}」`
       : '';
 
-  const acknowledgementTemplates =
-    persona.secondPerson === 'あなた'
-      ? [
-          `あなたが教えてくれた${quotedUserText}、ちゃんと胸にしまっておくね`,
-          `${quotedUserText}って言葉、とても響いたよ`,
-        ]
-      : [
-          `${persona.secondPerson}が話してくれた${quotedUserText}、しっかり覚えておくからね`,
-          `${quotedUserText}って聞けて、とても嬉しかったよ`,
-        ];
-  const acknowledgement =
-    quotedUserText && acknowledgementTemplates.length > 0 ? pickRandom(acknowledgementTemplates) ?? '' : '';
+  const parts: string[] = [];
 
-  const opener = pickRandom(persona.openers) ?? descriptor.tagline;
+  if (questionType) {
+    const questionResponses: Record<string, string[]> = {
+      what: [
+        `${quotedUserText}について、${persona.firstPerson}なりに考えてみたよ。`,
+        `${quotedUserText}って聞かれて、魔法の本で調べてみたんだ。`,
+        `その質問、${persona.firstPerson}も気になってたことだよ。`,
+      ],
+      how: [
+        `${quotedUserText}の方法、一緒に考えてみない？`,
+        `どうやって...うーん、魔法で試してみることもできるかもしれない。`,
+        `その方法、${persona.firstPerson}も知りたいな。`,
+      ],
+      why: [
+        `${quotedUserText}の理由、魔法の本に書いてあるかもしれないよ。`,
+        `なぜかって...${persona.firstPerson}も不思議に思ってたんだ。`,
+        `その理由、一緒に探してみようか。`,
+      ],
+      when: [
+        `${quotedUserText}のタイミング、星が教えてくれるかもしれない。`,
+        `いつかって...魔法で見てみることもできるかも。`,
+        `その時、${persona.firstPerson}も一緒にいたいな。`,
+      ],
+      where: [
+        `${quotedUserText}の場所、魔法で探してみることもできるよ。`,
+        `どこかって...一緒に探してみない？`,
+        `その場所、${persona.firstPerson}も知りたいな。`,
+      ],
+      who: [
+        `${quotedUserText}の人、魔法で見つけられるかもしれない。`,
+        `誰かって...一緒に探してみようか。`,
+        `その人、${persona.firstPerson}も気になるな。`,
+      ],
+      yesno: [
+        `${quotedUserText}って聞かれて、${persona.firstPerson}なりに考えてみたよ。`,
+        `その質問、魔法で答えを見つけられるかもしれない。`,
+        `うーん、${persona.firstPerson}も一緒に考えてみるね。`,
+      ],
+    };
+    const responses = questionResponses[questionType] || questionResponses.yesno;
+    parts.push(pickRandom(responses) ?? '');
+  } else if (mainTopic) {
+    const topicResponses = [
+      `${mainTopic}の話、とても興味深いね。`,
+      `${mainTopic}について、もっと聞かせてほしいな。`,
+      `${mainTopic}って、魔法の本にも出てくるかもしれないよ。`,
+      `${mainTopic}のことを話してくれて、嬉しいよ。`,
+    ];
+    parts.push(pickRandom(topicResponses) ?? '');
+  } else if (quotedUserText) {
+    const acknowledgementTemplates =
+      persona.secondPerson === 'あなた'
+        ? [
+            `${quotedUserText}って言葉、とても響いたよ`,
+            `${quotedUserText}を聞けて、${persona.firstPerson}も嬉しくなった`,
+            `${quotedUserText}、ちゃんと胸にしまっておくね`,
+          ]
+        : [
+            `${quotedUserText}って聞けて、とても嬉しかったよ`,
+            `${persona.secondPerson}が話してくれた${quotedUserText}、しっかり覚えておくからね`,
+            `${quotedUserText}、${persona.firstPerson}も大切に思ってるよ`,
+          ];
+    parts.push(pickRandom(acknowledgementTemplates) ?? '');
+  }
+
   const moodPool =
     mood === 'positive'
       ? persona.positiveResponses
       : mood === 'negative'
         ? persona.negativeResponses
         : persona.neutralResponses;
-  const moodLine =
-    pickRandom(moodPool) ?? pickRandom(persona.neutralResponses) ?? descriptor.tagline;
+  const moodLine = pickRandom(moodPool);
+  if (moodLine) {
+    parts.push(moodLine);
+  }
 
-  const memoryLine =
-    profile.recentTopics && persona.memoryReminders.length > 0
-      ? formatWithTopics(pickRandom(persona.memoryReminders) ?? '', profile.recentTopics)
-      : '';
+  if (profile.recentTopics && persona.memoryReminders.length > 0 && Math.random() < 0.5) {
+    const memoryLine = formatWithTopics(pickRandom(persona.memoryReminders) ?? '', profile.recentTopics);
+    if (memoryLine) {
+      parts.push(memoryLine);
+    }
+  }
 
   const themeFlavor = (() => {
     switch (theme) {
-      case 'robot':
-        return 'ログにも大切に保存しておくね。';
-      case 'animal':
-        return '全身で喜びを感じて、しっぽが止まらないよ！';
-      case 'plant':
+      case 'wizard':
+        return Math.random() < 0.4
+          ? '魔法の本で調べてみたこともあるんだ。'
+          : '魔法で見守ってるからね。';
       default:
-        return 'ふわりとやさしい風が心をなでたみたい。';
+        return '';
     }
   })();
+  if (themeFlavor) {
+    parts.push(themeFlavor);
+  }
 
-  const closing = pickRandom(persona.closings) ?? descriptor.tagline;
+  if (parts.length === 0) {
+    const opener = pickRandom(persona.openers) ?? descriptor.tagline;
+    parts.push(opener);
+  }
 
-  return combineSentences([acknowledgement, opener, moodLine, memoryLine, themeFlavor, closing]);
+  const closing = pickRandom(persona.closings);
+  if (closing && Math.random() < 0.6) {
+    parts.push(closing);
+  }
+
+  return combineSentences(parts);
 }
 
 function clamp(value: number, min: number, max: number) {

@@ -39,15 +39,6 @@ export default function Settings({ data, updateData }: SettingsProps) {
     alert('通知時間を保存しました！');
   };
 
-  const changeTheme = (theme: 'plant' | 'animal' | 'robot') => {
-    updateData((prev) => ({
-      ...prev,
-      character: {
-        ...prev.character,
-        theme,
-      },
-    }));
-  };
 
   const addMorningRoutine = () => {
     setMorningRoutines([...morningRoutines, '']);
@@ -173,32 +164,6 @@ export default function Settings({ data, updateData }: SettingsProps) {
           </button>
         </div>
 
-        <div className="settings-section">
-          <h2 className="settings-title">キャラクターテーマ</h2>
-          <div className="theme-selector">
-            <button
-              className={`theme-button ${data.character.theme === 'plant' ? 'selected' : ''}`}
-              onClick={() => changeTheme('plant')}
-            >
-              🌱
-              <span className="theme-label">植物系</span>
-            </button>
-            <button
-              className={`theme-button ${data.character.theme === 'animal' ? 'selected' : ''}`}
-              onClick={() => changeTheme('animal')}
-            >
-              🐾
-              <span className="theme-label">動物系</span>
-            </button>
-            <button
-              className={`theme-button ${data.character.theme === 'robot' ? 'selected' : ''}`}
-              onClick={() => changeTheme('robot')}
-            >
-              🤖
-              <span className="theme-label">ロボット系</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

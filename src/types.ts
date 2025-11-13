@@ -37,7 +37,7 @@ export interface Character {
   level: number;
   experience: number;
   experienceToNext: number;
-  theme: 'plant' | 'animal' | 'robot';
+  theme: 'wizard';
   evolutionStage: number;
   lastActiveDate: string;
 }
