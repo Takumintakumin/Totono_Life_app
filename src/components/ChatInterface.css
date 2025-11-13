@@ -43,6 +43,18 @@
   line-height: 1.35;
 }
 
+.chat-affinity-tagline {
+  font-size: 0.74rem;
+  color: rgba(42, 33, 82, 0.75);
+  line-height: 1.45;
+}
+
+.chat-memory-summary {
+  font-size: 0.68rem;
+  color: rgba(60, 49, 98, 0.62);
+  line-height: 1.35;
+}
+
 .chat-header-meta {
   display: flex;
   flex-wrap: wrap;
@@ -61,6 +73,12 @@
   color: #43307f;
   background: rgba(255, 255, 255, 0.48);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.chat-affinity-badge {
+  background: rgba(255, 255, 255, 0.65);
+  color: #5a3ba7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .chat-meta-entry {
