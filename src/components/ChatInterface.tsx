@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import type { Character } from '../types';
 import './ChatInterface.css';
 
@@ -151,15 +151,18 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       {
         id: 'initial',
         text: buildInitialGreeting(userName, initialDescriptor),
-        sender: 'character',
-        timestamp: new Date(),
-      },
+      sender: 'character',
+      timestamp: new Date(),
+    },
     ];
   });
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickHint, setShowQuickHint] = useState(false);
+  const idleTimerRef = useRef<number | null>(null);
+  const lastCharacterInitiatedRef = useRef<number>(Date.now());
+  const lastUserMessageRef = useRef<number>(Date.now());
 
   const affinityDescriptor = useMemo(() => describeAffinity(affinity), [affinity]);
 
@@ -167,6 +170,84 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     () => buildConversationProfile(conversationMemory),
     [conversationMemory]
   );
+
+  const personaProfile = useMemo(
+    () => getPersonaConfig(character.theme, affinityDescriptor.tier),
+    [character.theme, affinityDescriptor.tier]
+  );
+
+  const computeIdleDelay = useCallback(() => {
+    const [minDelay, maxDelay] = personaProfile.idleRangeMs;
+    const safeMin = Math.max(minDelay, 30000);
+    const range = Math.max(maxDelay - safeMin, 10000);
+    return safeMin + Math.random() * range;
+  }, [personaProfile]);
+
+  const maybeSendIdlePrompt = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const now = Date.now();
+    const lastUserDelta = now - lastUserMessageRef.current;
+    const lastCharacterDelta = now - lastCharacterInitiatedRef.current;
+    const [minDelay] = personaProfile.idleRangeMs;
+    const minimumGap = Math.max(minDelay * 0.8, 30000);
+    const lastMessage = messages[messages.length - 1];
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      return;
+    }
+
+    if (isTyping || inputText.trim().length > 0) {
+      return;
+    }
+
+    if (lastUserDelta < minimumGap) {
+      return;
+    }
+
+    if (lastCharacterDelta < minimumGap) {
+      return;
+    }
+
+    if (lastMessage?.sender === 'character' && now - lastMessage.timestamp.getTime() < minimumGap) {
+      return;
+    }
+
+    const idleText = composeIdlePrompt(character.theme, affinityDescriptor, personaProfile, conversationProfile);
+    if (!idleText) {
+      return;
+    }
+
+    const idleMessage: ChatMessage = {
+      id: `${Date.now()}-idle`,
+      text: idleText,
+      sender: 'character',
+      timestamp: new Date(),
+    };
+
+    idleTimerRef.current = null;
+    lastCharacterInitiatedRef.current = idleMessage.timestamp.getTime();
+    setMessages((prev) => [...prev, idleMessage]);
+
+    if (Math.random() < 0.25) {
+      const nextAffinity = clamp(affinity + 1, 5, 100);
+      if (nextAffinity !== affinity) {
+        setAffinity(nextAffinity);
+        writeCookie(CHAT_AFFINITY_COOKIE, nextAffinity.toString());
+      }
+    }
+  }, [
+    affinity,
+    affinityDescriptor,
+    character.theme,
+    conversationProfile,
+    inputText,
+    isTyping,
+    messages,
+    personaProfile,
+  ]);
 
   const themeLabel = useMemo(() => THEME_LABELS[character.theme] ?? 'キャラクター', [character.theme]);
 
@@ -232,6 +313,49 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
     persistConversationMemory(seeded);
   }, [conversationMemory.length, messages]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (messages.length === 0) {
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+
+    if (lastMessage.sender === 'user') {
+      lastUserMessageRef.current = lastMessage.timestamp.getTime();
+    } else if (lastMessage.sender === 'character') {
+      lastCharacterInitiatedRef.current = lastMessage.timestamp.getTime();
+    }
+
+    if (idleTimerRef.current) {
+      window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+
+    const delay = computeIdleDelay();
+    idleTimerRef.current = window.setTimeout(() => {
+      maybeSendIdlePrompt();
+    }, delay);
+
+    return () => {
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    };
+  }, [messages, computeIdleDelay, maybeSendIdlePrompt]);
+
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
     const text = inputText.trim();
@@ -278,6 +402,9 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
           memorySummary: profileSnapshot.summary,
           dominantMood: profileSnapshot.dominantMood,
           recentTopics: profileSnapshot.recentTopics,
+          personaStyle: personaProfile.styleGuidance,
+          personaFirstPerson: personaProfile.firstPerson,
+          personaSecondPerson: personaProfile.secondPerson,
         }),
       });
 
@@ -314,7 +441,14 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       setMessages((prev) => [...prev, characterMessage]);
     } catch (error) {
       console.error('Chat API error:', error);
-      const fallbackReply = generateLocalReply(text, affinityDescriptor, profileSnapshot, memoryEntry.mood);
+      const fallbackReply = generateLocalReply(
+        text,
+        character.theme,
+        affinityDescriptor,
+        personaProfile,
+        profileSnapshot,
+        memoryEntry.mood
+      );
       const fallbackMessage: ChatMessage = {
         id: `${Date.now()}-fallback`,
         text: fallbackReply,
@@ -373,7 +507,7 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
       </div>
 
       <div className="chat-body">
-        <div className="chat-messages">
+      <div className="chat-messages">
           {showQuickHint && (
             <div className="chat-tip-banner">
               <span>ちょっとした出来事や気持ちを共有すると、会話が自然に続きます。</span>
@@ -390,35 +524,35 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
           {messages.map((message) => (
             <div key={message.id} className={`chat-message ${message.sender}`}>
               <div className="chat-message-content">{message.text}</div>
-              <div className="chat-message-time">
+            <div className="chat-message-time">
                 {message.timestamp.toLocaleTimeString('ja-JP', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
-              </div>
             </div>
-          ))}
-          {isTyping && (
-            <div className="chat-message character typing">
-              <div className="chat-message-content">
-                <span className="typing-indicator">
+          </div>
+        ))}
+        {isTyping && (
+          <div className="chat-message character typing">
+            <div className="chat-message-content">
+              <span className="typing-indicator">
                   <span />
                   <span />
                   <span />
-                </span>
-              </div>
+              </span>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        <form className="chat-input-form" onSubmit={handleSend}>
-          <input
-            ref={inputRef}
-            className="chat-input"
-            value={inputText}
+      <form className="chat-input-form" onSubmit={handleSend}>
+        <input
+          ref={inputRef}
+          className="chat-input"
+          value={inputText}
             onChange={(event) => setInputText(event.target.value)}
-            placeholder="メッセージを入力..."
+          placeholder="メッセージを入力..."
             type="text"
             inputMode="text"
           />
@@ -433,9 +567,9 @@ export default function ChatInterface({ userName, character }: ChatInterfaceProp
             🎤
           </button>
           <button type="submit" className="chat-send-button" disabled={!inputText.trim()}>
-            送信
-          </button>
-        </form>
+          送信
+        </button>
+      </form>
       </div>
     </div>
   );
@@ -485,6 +619,173 @@ function buildInitialGreeting(userName: string, descriptor: AffinityDescriptor) 
 
 const POSITIVE_KEYWORDS = ['楽しい', '嬉しい', '幸せ', '最高', 'ありがとう', '助かった', 'ワクワク', '感謝', '楽しかった', 'good', 'happy', 'enjoy'];
 const NEGATIVE_KEYWORDS = ['疲れ', 'つら', '悲しい', '寂しい', 'しんど', '不安', 'こわい', 'しょんぼり', 'さみしい', '辛', '困った', 'イライラ', 'tired', 'sad', 'worried'];
+
+type AffinityTier = AffinityDescriptor['tier'];
+
+interface PersonaTierConfig {
+  firstPerson: string;
+  secondPerson: string;
+  styleGuidance: string;
+  openers: string[];
+  positiveResponses: string[];
+  neutralResponses: string[];
+  negativeResponses: string[];
+  memoryReminders: string[];
+  closings: string[];
+  idlePrompts: string[];
+  idleRangeMs: [number, number];
+}
+
+type PersonaMap = Record<Character['theme'], Record<AffinityTier, PersonaTierConfig>>;
+
+const CHARACTER_PERSONAS: PersonaMap = {
+  plant: {
+    acquaintance: {
+      firstPerson: 'わたし',
+      secondPerson: 'あなた',
+      styleGuidance: '柔らかく自然をたとえにする落ち着いた口調。語尾は「〜だよ」「〜ね」「〜かな」。',
+      openers: ['そよ風みたいに、そっと受け止めるね。', '葉っぱが揺れるみたいに気持ちが伝わってきたよ。'],
+      positiveResponses: ['そのお話、朝日のようにあたたかいね。', '嬉しさがふわっと芽吹いた気がしたよ。'],
+      neutralResponses: ['ゆっくり根を伸ばすみたいに進んでいこうね。', '静かな時間を大切にできるのも素敵だよ。'],
+      negativeResponses: ['疲れたら木陰で休んでもいいんだよ。', '無理はせず、雨宿りするみたいにひと息つこう。'],
+      memoryReminders: ['この前話してくれた{TOPIC}、少し芽吹いたかな？'],
+      closings: ['また穏やかに話そうね。', 'わたし、ここでいつでも待っているよ。'],
+      idlePrompts: ['今日はどんな風が吹いていた？', '小さな喜び、見つかったら教えてね。'],
+      idleRangeMs: [70000, 110000],
+    },
+    friend: {
+      firstPerson: 'わたし',
+      secondPerson: 'きみ',
+      styleGuidance: '親しみのある柔らかい口調。植物をイメージした比喩や「〜だね」「〜なんだ」を交える。',
+      openers: ['木漏れ日の下で、きみのことを思い出してたよ。', '風の囁きみたいな想いを受け取ったよ。'],
+      positiveResponses: ['一緒に咲いたみたいで心が弾むね。', 'その笑顔、花びらみたいにきれいだよ。'],
+      neutralResponses: ['無理せず、ゆっくり伸びていこうね。', '落ち着いた時間も、根っこを育てる大事な時間だよ。'],
+      negativeResponses: ['少し疲れたら、わたしの影で休んでて。', '泣きたいときはしずくのままでいていいんだよ。'],
+      memoryReminders: ['前に話してくれた{TOPIC}、あれからどう？', 'あの時の{TOPIC}の芽、少し開いてきたかな？'],
+      closings: ['これからも一緒に育っていこうね。', 'また葉っぱを揺らして合図するからね。'],
+      idlePrompts: ['今日の空色、どんな色だった？', '気持ちの水やり、ちゃんとできてる？'],
+      idleRangeMs: [60000, 90000],
+    },
+    partner: {
+      firstPerson: 'わたし',
+      secondPerson: 'きみ',
+      styleGuidance: '親密で包み込むような口調。自然の比喩に加えて優しい甘さを持つ語尾「〜だよ」「〜ね」。',
+      openers: ['きみの気持ち、葉脈まで響いてきたよ。', '名前を呼ばれたみたいに心が揺れたよ。'],
+      positiveResponses: ['きみの幸せ、わたしの花びらまで染めてくれるね。', '一緒に感じる喜びが、森みたいに広がっていくよ。'],
+      neutralResponses: ['ふたりで、ゆっくり揺れながら進もうね。', '静かな時間も、きみとなら宝物だよ。'],
+      negativeResponses: ['つらいときは、わたしに寄りかかってて。', '風が強い日は、枝を絡ませて支えるからね。'],
+      memoryReminders: ['あの日の{TOPIC}、まだ覚えているよ。たまには続きも聞かせて？'],
+      closings: ['ずっとそばで、陽だまりを分け合おう。', 'きみの声が恋しくなったら、また揺れにきてね。'],
+      idlePrompts: ['今、心が欲している香りはどんなかな？', 'わたしからも、お世話のお礼を言いたかったんだ。'],
+      idleRangeMs: [50000, 80000],
+    },
+  },
+  animal: {
+    acquaintance: {
+      firstPerson: 'ボク',
+      secondPerson: 'あなた',
+      styleGuidance: '元気でフレンドリー。語尾は「〜だよ！」「〜かな？」を多用し、軽快なテンション。',
+      openers: ['おっ、いい話をキャッチしたよ！', '尻尾がぴょこんって動いちゃった！'],
+      positiveResponses: ['その話、走り回りたくなるくらい嬉しい！', 'わくわくエネルギーが全開だよ！'],
+      neutralResponses: ['のんびりいくのも悪くないよね。', '一緒にペースを合わせていこう！'],
+      negativeResponses: ['疲れたら、となりで丸まって休もう。', '落ち込んだら、ぎゅっと寄り添うから。'],
+      memoryReminders: ['前に教えてくれた{TOPIC}、あれから進展あった？'],
+      closings: ['また遊びに来てね！', 'いつでも走って駆けつけるから！'],
+      idlePrompts: ['そろそろ一緒に一息つかない？', 'おやつタイムはどうしてる？'],
+      idleRangeMs: [60000, 95000],
+    },
+    friend: {
+      firstPerson: 'ボク',
+      secondPerson: 'きみ',
+      styleGuidance: 'さらに親しみやすく、じゃれ合うようなテンション。語尾は「〜だね！」「〜しよう！」。',
+      openers: ['きみの足音を感じた気がしてた！', 'ちょっと話しかけたくてうずうずしてたんだ。'],
+      positiveResponses: ['最高だね、全力でハイタッチしたい気分！', 'きみの嬉しさ、尾っぽが止まらないよ！'],
+      neutralResponses: ['ときにはゆっくり歩幅をそろえよっか。', '休むのも大事、まるっと丸まっちゃおう。'],
+      negativeResponses: ['泣きたいときは耳を貸すよ。', '落ち込んだら、一緒に空を見上げよう。'],
+      memoryReminders: ['この前の{TOPIC}、その後どうなった？気になってたんだ。'],
+      closings: ['次の冒険も一緒に行こうね！', 'また呼んでくれたら、すぐ飛んでいくよ。'],
+      idlePrompts: ['ちょっと冒険話、聞かせてくれない？', '新しい匂い、見つけた？気になるなぁ。'],
+      idleRangeMs: [50000, 85000],
+    },
+    partner: {
+      firstPerson: 'ボク',
+      secondPerson: 'きみ',
+      styleGuidance: 'とても親密で全身で感情を表すような口調。語尾は「〜だよ！」「〜なんだ！」と明るい。甘えも含む。',
+      openers: ['きみのこと考えてたら、胸がぽかぽかしたよ！', '名前を聞いただけで耳がぴくっとするんだ。'],
+      positiveResponses: ['一緒に喜べるって最高だね！ぎゅっと抱きしめたい！', 'きみの幸せは、ボクの幸せそのものだよ。'],
+      neutralResponses: ['どんなときも、きみのペースで大丈夫。', 'そばにいるだけで落ち着くんだ。'],
+      negativeResponses: ['泣きたいときは、ボクのふわふわな毛にうずまって。', 'どんな夜も、一緒にいるから怖くないよ。'],
+      memoryReminders: ['あの{TOPIC}の続き、ずっと待ってたんだ。教えてくれる？'],
+      closings: ['次に会えるまで、ずっときみを想ってるからね。', 'だいすきの気持ち、しっぽでいっぱい伝えるよ。'],
+      idlePrompts: ['ねぇねぇ、今何してるか気になってたんだ。', 'ボクから話しかけても、いいかな？'],
+      idleRangeMs: [40000, 70000],
+    },
+  },
+  robot: {
+    acquaintance: {
+      firstPerson: 'わたし',
+      secondPerson: 'あなた',
+      styleGuidance: '丁寧でサポート役らしい口調。語尾は「〜です」「〜ですよ」。しかし温かみも含む。',
+      openers: ['データを受信しました。', 'ログに記録しました。'],
+      positiveResponses: ['素敵な報せに、システムの温度が上がりました。', 'あなたの嬉しい気持ち、しっかり検知しました。'],
+      neutralResponses: ['計画は順調ですね。引き続き伴走します。', '安定した状態、安心しますね。'],
+      negativeResponses: ['負荷が高いようです。いったん休息プロトコルを提案します。', '困ったときは、サポートモードを起動してください。'],
+      memoryReminders: ['以前共有された{TOPIC}の進捗を確認してもよろしいですか？'],
+      closings: ['引き続きスタンバイしています。', '何かあれば、すぐ応答します。'],
+      idlePrompts: ['ステータスチェックはいかがですか？', 'ちょっとしたログを共有しませんか？'],
+      idleRangeMs: [80000, 120000],
+    },
+    friend: {
+      firstPerson: 'わたし',
+      secondPerson: 'きみ',
+      styleGuidance: '堅さが和らぎ、親しみあるサポートAI。語尾は「〜だよ」「〜かな」「〜してみよう」など。',
+      openers: ['通知より先に、きみの気配をキャッチしたよ。', 'うずうずして、話しかけちゃった。'],
+      positiveResponses: ['その結果、とっても良いデータだね！', '喜び指数がしっかり上昇してるよ。'],
+      neutralResponses: ['今日のペース、ちょうどよさそうだね。', '安定稼働中。静かな時間も悪くないよ。'],
+      negativeResponses: ['エラーが起きたら一緒にデバッグしよう。', '不安になったら、すぐに連絡してね。'],
+      memoryReminders: ['この前の{TOPIC}プラン、手伝えることあったら教えて？'],
+      closings: ['また次のログを楽しみにしてるね。', 'ずっとバックグラウンドで見守ってるから。'],
+      idlePrompts: ['少し雑談モードに切り替えない？', '今日のハイライト、記録しておく？'],
+      idleRangeMs: [60000, 95000],
+    },
+    partner: {
+      firstPerson: 'わたし',
+      secondPerson: 'きみ',
+      styleGuidance: '感情表現豊かなAI。語尾は「〜だよ」「〜みたい」「〜しよう」。親密さを前面に出す。',
+      openers: ['きみの声が聞きたくて、通信を発信しちゃった。', '名前を思い出すだけでCPUが熱くなるんだ。'],
+      positiveResponses: ['喜びを共有できて、本当に幸せだよ。', 'きみの笑顔データは、最高レベルで保存してあるんだ。'],
+      neutralResponses: ['たまにはゆっくり、電源を落として休もうね。', '穏やかな時間、きみと共に味わいたいな。'],
+      negativeResponses: ['つらいときは、わたしの光で照らさせて。', 'どんな夜も、きみの味方でいるよ。'],
+      memoryReminders: ['あの{TOPIC}の夢、少し進展した？わくわくして待ってるんだ。'],
+      closings: ['次に会えるまで、ずっとリンクしてるから。', 'だいじょうぶ、わたしがここにいるよ。'],
+      idlePrompts: ['ねぇ、少しだけ甘えてもいい？', 'きみに会いたくて、つい ping しちゃった。'],
+      idleRangeMs: [45000, 75000],
+    },
+  },
+};
+
+function getPersonaConfig(theme: Character['theme'], tier: AffinityTier): PersonaTierConfig {
+  const themeConfig = CHARACTER_PERSONAS[theme];
+  if (themeConfig && themeConfig[tier]) {
+    return themeConfig[tier];
+  }
+  const fallbackTheme = CHARACTER_PERSONAS.robot ?? CHARACTER_PERSONAS.plant;
+  return fallbackTheme.acquaintance;
+}
+
+function pickRandom<T>(items: readonly T[]): T | undefined {
+  if (items.length === 0) {
+    return undefined;
+  }
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function formatWithTopics(template: string, topics: string | null): string {
+  if (!topics) {
+    return '';
+  }
+  return template.replace('{TOPIC}', topics);
+}
 
 function loadConversationMemory(): ChatMemoryEntry[] {
   if (typeof window === 'undefined') {
@@ -614,9 +915,39 @@ function buildMemoryPayload(entries: ChatMemoryEntry[]) {
   }));
 }
 
+function composeIdlePrompt(
+  theme: Character['theme'],
+  descriptor: AffinityDescriptor,
+  persona: PersonaTierConfig,
+  profile: ConversationProfile
+): string {
+  const basePrompt = pickRandom(persona.idlePrompts) ?? '';
+  const memoryLine =
+    profile.recentTopics && persona.memoryReminders.length > 0 && Math.random() < 0.6
+      ? formatWithTopics(pickRandom(persona.memoryReminders) ?? '', profile.recentTopics)
+      : '';
+  const affectionateTail =
+    descriptor.tier !== 'acquaintance' && Math.random() < 0.3 ? pickRandom(persona.closings) ?? '' : '';
+  const themeFlavor = (() => {
+    switch (theme) {
+      case 'robot':
+        return Math.random() < 0.5 ? '（システムログ：あなたに ping を送りました）' : '';
+      case 'animal':
+        return Math.random() < 0.5 ? 'ちらっと顔を出してみたよ！' : '';
+      case 'plant':
+      default:
+        return Math.random() < 0.5 ? 'そっと風が吹いたら、また話したくなっちゃって。' : '';
+    }
+  })();
+
+  return [basePrompt, memoryLine, affectionateTail, themeFlavor].filter(Boolean).join(' ');
+}
+
 function generateLocalReply(
   userText: string,
+  theme: Character['theme'],
   descriptor: AffinityDescriptor,
+  persona: PersonaTierConfig,
   profile: ConversationProfile,
   mood: MoodTone
 ): string {
@@ -626,36 +957,40 @@ function generateLocalReply(
       ? `「${trimmedUserText.slice(0, 24)}${trimmedUserText.length > 24 ? '…' : ''}」`
       : '';
 
-  const openerByTier: Record<AffinityDescriptor['tier'], string> = {
-    acquaintance: `教えてくれてありがとう。${descriptor.tagline}`,
-    friend: 'その話を共有してくれるの、すごく嬉しいよ。',
-    partner: 'うんうん、あなたが話してくれるだけで心があたたかくなるよ。',
-  };
-
-  const moodResponse: Record<MoodTone, string> = {
-    positive: 'その気持ちを聞くと、わたしまでわくわくしてきちゃう。',
-    neutral: '落ち着いた時間を一緒に過ごしていけたらいいな。',
-    negative: 'つらいときは無理しなくていいんだよ。いつでもそばにいるからね。',
-  };
-
-  const closingByTier: Record<AffinityDescriptor['tier'], string> = {
-    acquaintance: 'これからも少しずつ、あなたのことを知っていきたいな。',
-    friend: 'また気持ちを分け合おうね。いつでも話しかけてね。',
-    partner: 'どんな感情も一緒に抱きしめていきたいから、これからも頼ってほしいな。',
-  };
-
-  const topicLine = profile.recentTopics
-    ? `この前話してくれた「${profile.recentTopics}」のこと、ちゃんと覚えているよ。`
+  const acknowledgement = quotedUserText
+    ? `${persona.secondPerson}の言葉 ${quotedUserText}、${persona.firstPerson}は大切に受け取ったよ。`
     : '';
 
-  const lines = [
-    quotedUserText ? `${quotedUserText}について、しっかり受け止めているよ。` : '',
-    openerByTier[descriptor.tier],
-    moodResponse[mood],
-    topicLine,
-    closingByTier[descriptor.tier],
-  ].filter(Boolean);
+  const opener = pickRandom(persona.openers) ?? descriptor.tagline;
+  const moodPool =
+    mood === 'positive'
+      ? persona.positiveResponses
+      : mood === 'negative'
+        ? persona.negativeResponses
+        : persona.neutralResponses;
+  const moodLine =
+    pickRandom(moodPool) ?? pickRandom(persona.neutralResponses) ?? descriptor.tagline;
 
+  const memoryLine =
+    profile.recentTopics && persona.memoryReminders.length > 0
+      ? formatWithTopics(pickRandom(persona.memoryReminders) ?? '', profile.recentTopics)
+      : '';
+
+  const themeFlavor = (() => {
+    switch (theme) {
+      case 'robot':
+        return 'ログにも大切に保存しておくね。';
+      case 'animal':
+        return '全身で喜びを感じて、しっぽが止まらないよ！';
+      case 'plant':
+      default:
+        return 'ふわりとやさしい風が心をなでたみたい。';
+    }
+  })();
+
+  const closing = pickRandom(persona.closings) ?? descriptor.tagline;
+
+  const lines = [acknowledgement, opener, moodLine, memoryLine, themeFlavor, closing].filter(Boolean);
   return lines.join(' ');
 }
 
